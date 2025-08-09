@@ -1,6 +1,7 @@
 {
   "name": "frontend-workspace",
   "private": true,
+  "type": "module",
   "version": "1.0.0",
   "scripts": {
     "dev:hpc": "pnpm --filter hpc dev",
@@ -9,16 +10,7 @@
     "build:hwc": "pnpm --filter hwc build",
     "lint": "pnpm -r exec eslint .",
     "format": "pnpm -r exec prettier -w .",
-    "typecheck": "pnpm -r exec tsc -p tsconfig.json --noEmit",
-  },
-  "lint-staged": {
-    "apps/{hpc,hwc,shared}/**/*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "apps/{hpc,hwc,shared}/**/*.{json,md}": [
-      "prettier --write"
-    ]
+    "typecheck": "tsc -b apps/hpc apps/hwc shared --noEmit --pretty false"
   },
   "dependencies": {
     "@emotion/styled": "^11.11.5",

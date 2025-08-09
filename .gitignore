@@ -24,6 +24,9 @@ build/
 coverage/
 *.log
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # -----------------------
 # Vite
 # -----------------------

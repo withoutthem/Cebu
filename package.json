@@ -10,11 +10,15 @@
     "prettier": "^3.6.2"
   },
   "lint-staged": {
-    "frontend/apps/{hpc,hwc,shared}/**/*.{ts,tsx,js,jsx}": [
+    "frontend/apps/{hpc,hwc}/**/*.{ts,tsx,js,jsx}": [
       "eslint --config frontend/eslint.config.js --fix",
       "prettier --write"
     ],
-    "frontend/apps/{hpc,hwc,shared}/**/*.{json,md}": [
+    "frontend/shared/**/*.{ts,tsx,js,jsx}": [
+      "eslint --config frontend/eslint.config.js --fix",
+      "prettier --write"
+    ],
+    "frontend/{apps/{hpc,hwc},shared}/**/*.{json,md}": [
       "prettier --write"
     ]
   }
