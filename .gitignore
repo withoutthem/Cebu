@@ -1,0 +1,63 @@
+# -----------------------
+# OS / 편집기
+# -----------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+.Spotlight-V100
+.Trashes
+.idea/
+.vscode/
+*.iml
+
+# -----------------------
+# Node / pnpm / frontend
+# -----------------------
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+dist/
+build/
+.cache/
+.tmp/
+coverage/
+*.log
+
+# -----------------------
+# Vite
+# -----------------------
+vite.config.timestamp-*.mjs
+vite.config.timestamp-*.ts
+
+# -----------------------
+# Gradle / backend
+# -----------------------
+.gradle/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Gradle cache
+**/build/
+**/target/
+
+# -----------------------
+# Spring Boot
+# -----------------------
+*.class
+*.jar
+*.war
+*.ear
+
+# -----------------------
+# Test / Reports
+# -----------------------
+test-results/
+reports/
+
+# -----------------------
+# 기타
+# -----------------------
+*.swp
+*.swo
+*~

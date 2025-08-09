@@ -1,0 +1,18 @@
+{
+  "name": "@cebu/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./http": "./src/http/index.ts",
+    "./socket": "./src/socket/index.ts",
+    "./query": "./src/query/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "sideEffects": false,
+  "files": ["src"]
+}
