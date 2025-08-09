@@ -10,7 +10,8 @@
     "build:hwc": "pnpm --filter hwc build",
     "lint": "pnpm -r exec eslint .",
     "format": "pnpm -r exec prettier -w .",
-    "typecheck": "tsc -b apps/hpc apps/hwc shared --noEmit --pretty false"
+    "typecheck": "tsc -p tsconfig.base.json --noEmit --pretty false",
+    "types:shared": "tsc -b shared"
   },
   "dependencies": {
     "@emotion/styled": "^11.11.5",

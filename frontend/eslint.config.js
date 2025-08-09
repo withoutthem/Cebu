@@ -3,7 +3,7 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-plugin-prettier';
 import react from 'eslint-plugin-react';
-import path from "node:path";
+import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // ← 추가
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url)); // ← 추가
@@ -17,7 +17,8 @@ export default [
       'apps/*/dist',
       'apps/*/build',
       'shared/dist',
-      'eslint.config.js'
+      'eslint.config.js',
+      '**/*.tsbuildinfo',
     ],
   },
   {
