@@ -1,7 +1,8 @@
 export default {
     rootDir: '.',
     testEnvironment: 'node',
-    testMatch: ['**/*.test.(ts|tsx)'],
+    roots: ['<rootDir>/src/__tests__'],
+    testMatch: ['**/*.test.ts', '**/*.test.tsx'],
     transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true, tsconfig: '<rootDir>/tsconfig.jest.json' }]
     },
