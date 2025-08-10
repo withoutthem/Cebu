@@ -8,5 +8,6 @@ npx lint-staged || exit 1
 npm --prefix frontend --silent run typecheck || exit 1
 
 # 3) FE 앱 테스트 (pnpm로 워크스페이스 필터)
-# pnpm -C frontend --filter hpc test -- --passWithNoTests || exit 1
-# pnpm -C frontend --filter hwc test -- --passWithNoTests || exit 1
+pnpm -C frontend --filter @cebu/shared test -- --passWithNoTests || exit 1
+pnpm -C frontend --filter hpc test -- --passWithNoTests || exit 1
+pnpm -C frontend --filter hwc test -- --passWithNoTests || exit 1

@@ -20,7 +20,7 @@
     "noUnusedParameters": true,
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
-
+    "esModuleInterop": true,
     "skipLibCheck": true,
     "allowJs": false,
     "resolveJsonModule": true,

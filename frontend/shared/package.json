@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "main": "src/index.ts",
+  "scripts": {
+    "test": "jest --config ./jest.config.mjs --passWithNoTests"
+  },
   "sideEffects": false,
   "files": [
     "src"

@@ -4,14 +4,20 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev:hpc": "pnpm --filter hpc dev",
-    "dev:hwc": "pnpm --filter hwc dev",
-    "build:hpc": "pnpm --filter hpc build",
-    "build:hwc": "pnpm --filter hwc build",
+    "local:hpc": "pnpm --filter hpc dev -- --mode local",
+    "local:hwc": "pnpm --filter hwc dev -- --mode local",
+    "build:hpc:dev": "pnpm --filter hpc build -- --mode dev",
+    "build:hpc:prod": "pnpm --filter hpc build -- --mode prod",
+    "build:hwc:dev": "pnpm --filter hwc build -- --mode dev",
+    "build:hwc:prod": "pnpm --filter hwc build -- --mode prod",
     "lint": "pnpm -r exec eslint .",
     "format": "pnpm -r exec prettier -w .",
     "typecheck": "tsc -p tsconfig.base.json --noEmit --pretty false",
-    "types:shared": "tsc -b shared"
+    "types:shared": "tsc -b shared",
+    "test:hpc": "pnpm --filter hpc test",
+    "test:hwc": "pnpm --filter hwc test",
+    "test:shared": "pnpm --filter @cebu/shared test",
+    "test:all": "pnpm -r --filter '{hpc,hwc,@cebu/shared}' test"
   },
   "dependencies": {
     "@emotion/styled": "^11.11.5",
@@ -35,8 +41,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
-    "@testing-library/jest-dom": "^6.4.2",
-    "@testing-library/react": "^16.0.0",
+    "@jest/globals": "^30.0.5",
+    "@types/jest": "^29.5.14",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
@@ -48,6 +54,7 @@
     "jest": "^29.7.0",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
+    "ts-jest": "^29.2.5",
     "typescript": "~5.8.3"
   }
 }

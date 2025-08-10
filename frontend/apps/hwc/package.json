@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "jest --passWithNoTests"
+    "test": "jest --config ./jest.config.mjs --passWithNoTests"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
