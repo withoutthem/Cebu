@@ -10,8 +10,6 @@
     "build:hpc:prod": "pnpm --filter hpc build -- --mode prod",
     "build:hwc:dev": "pnpm --filter hwc build -- --mode dev",
     "build:hwc:prod": "pnpm --filter hwc build -- --mode prod",
-    "lint": "pnpm -r exec eslint .",
-    "format": "pnpm -r exec prettier -w .",
     "typecheck": "tsc -p tsconfig.base.json --noEmit --pretty false",
     "types:shared": "tsc -b shared",
     "test:hpc": "pnpm --filter hpc test",
