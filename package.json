@@ -24,7 +24,7 @@
     "frontend/shared/src/**/*.{ts,tsx}": [
       "eslint --config frontend/eslint.config.js --fix",
       "prettier --write",
-      "npm --prefix frontend run types:shared --silent"
+      "sh -c 'npm --prefix frontend run types:shared --silent'"
     ]
   }
 }

@@ -1,28 +1,33 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
+
     "strict": true,
-    "noImplicitAny": true, // 암시적 any 금지
-    "strictNullChecks": true, // null/undefined 명시적 처리
-    "strictFunctionTypes": true, // 함수 매개변수의 타입 호환성 강화
-    "strictBindCallApply": true, // bind/call/apply 호출 시 타입 체크 강화
-    "noImplicitThis": true, // 암시적 this 금지
-    "alwaysStrict": true, // 항상 strict mode로 컴파일
-    "exactOptionalPropertyTypes": true, // 선택적 속성의 타입을 엄격하게 체크
-    "noFallthroughCasesInSwitch": true, // switch case fallthrough 방지
-    "noImplicitOverride": true, // override 시 명시적 표시 강제
-    "noUnusedLocals": true, // 사용되지 않는 로컬 변수 금지
-    "noUnusedParameters": true, // 사용되지 않는 매개변수 금지
-    "noUncheckedIndexedAccess": true, // 인덱스 접근 시 undefined 포함
-    "forceConsistentCasingInFileNames": true, // 파일명 대소문자 일관성 체크
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true,
+
     "skipLibCheck": true,
     "allowJs": false,
     "resolveJsonModule": true,
     "useDefineForClassFields": true,
-    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["shared/src/*"]
