@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
     build: { target: 'es2022', rollupOptions: { treeshake: true } },
     define: {
       __APP_VERSION__: JSON.stringify(env.npm_package_version),
+      __API_BASE_URL__: JSON.stringify(env.VITE_API_BASE_URL ?? '/api'),
+      __API_TIMEOUT__: JSON.stringify(env.VITE_API_TIMEOUT ?? '10000'),
+      __API_WITH_CREDENTIALS__: JSON.stringify(env.VITE_API_WITH_CREDENTIALS ?? 'false'),
     },
   };
 });

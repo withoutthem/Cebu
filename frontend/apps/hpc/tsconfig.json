@@ -4,7 +4,6 @@
     "types": ["vite/client", "jest"],
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts"],
-  "exclude": ["dist", "node_modules"],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+  "include": ["src", "vite.config.ts", "../../shared/src"],
+  "exclude": ["dist", "node_modules"]
 }
