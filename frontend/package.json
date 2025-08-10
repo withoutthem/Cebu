@@ -17,7 +17,7 @@
     "test:hpc": "pnpm --filter hpc test",
     "test:hwc": "pnpm --filter hwc test",
     "test:shared": "pnpm --filter @cebu/shared test",
-    "test:all": "pnpm -r --filter '{hpc,hwc,@cebu/shared}' test"
+    "test:all": "pnpm -C -r --filter hpc --filter hwc --filter @cebu/shared --aggregate-output --workspace-concurrency=1 run test"
   },
   "dependencies": {
     "@emotion/styled": "^11.11.5",
