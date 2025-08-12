@@ -1,0 +1,16 @@
+# application-local.yml
+
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
+    username: admin
+    password: hmm1234!@#
+    driver-class-name: oracle.jdbc.OracleDriver
+
+swagger:
+  enabled: true
+
+logging:
+  level:
+    root: DEBUG
+    org.springframework.web: DEBUG

@@ -1,0 +1,32 @@
+# application.yml
+
+spring:
+  application:
+    name: chatbot-ui
+  profiles:
+    active: local
+  datasource:
+    driver-class-name: oracle.jdbc.OracleDriver
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    serialization:
+      fail-on-empty-beans: false
+
+mybatis:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.hmm.app.domain
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-executor-type: REUSE
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG

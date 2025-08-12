@@ -1,0 +1,16 @@
+# application-dev.yml
+
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@dev-db-server:1521/devdb
+    username: dev_user
+    password: dev_pass
+    driver-class-name: oracle.jdbc.OracleDriver
+
+swagger:
+  enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG

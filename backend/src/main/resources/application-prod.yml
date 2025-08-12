@@ -1,0 +1,15 @@
+# application-prod.yml - 보안 설정 중요
+
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@prod-db-server:1521/proddb
+    username: prod_user
+    password: ${DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+swagger:
+  enabled: false
+
+logging:
+  level:
+    root: WARN
