@@ -1,25 +1,21 @@
 services:
   oracle:
-    image: gvenzl/oracle-xe:21-slim
-    container_name: oracle-xe
+    image: gvenzl/oracle-free:23-slim
+    container_name: oracle-free
     ports:
-      - "1521:1521"   # SQL*Net
-      - "5500:5500"   # EM Express
+      - "1527:1521"
+      - "5500:5500"
     environment:
-      ORACLE_PASSWORD: "hmm1234!@#"
-      ORACLE_DATABASE: "XEPDB1"
-      APP_USER: "admin"
-      APP_USER_PASSWORD: "admin1234"
+      ORACLE_PASSWORD: "hmm1234**"
+      ORACLE_CHARACTERSET: "AL32UTF8"
+      TZ: "Asia/Seoul"
     volumes:
-      - oracle-data:/opt/oracle/oradata
-      # - ./db/init:/container-entrypoint-initdb.d
-
+      - oracle23-data:/opt/oracle/oradata
+      - ./db/init:/container-entrypoint-initdb.d
     healthcheck:
-      # 헬스체크는 EZCONNECT(//host:port/service) 형식을 쓰면 TNS 없이도 동작합니다.
-      test: ["CMD-SHELL", "echo 'select 1 from dual;' | sqlplus -s system/$${ORACLE_PASSWORD}@//localhost:1521/$${ORACLE_DATABASE} || exit 1"]
+      test: ["CMD-SHELL", "echo 'select 1 from dual;' | sqlplus -s system/$${ORACLE_PASSWORD}@//127.0.0.1:1521/FREEPDB1 | grep -q '1'"]
       interval: 15s
       timeout: 5s
-      retries: 30
-
+      retries: 40
 volumes:
-  oracle-data:
+  oracle23-data:

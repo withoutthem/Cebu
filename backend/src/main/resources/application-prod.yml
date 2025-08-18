@@ -2,7 +2,7 @@
 
 spring:
   datasource:
-    url: jdbc:oracle:thin:@prod-db-server:1521/proddb
+    url: jdbc:oracle:thin:@prod-db-server:1527/proddb
     username: prod_user
     password: ${DB_PASSWORD}
     driver-class-name: oracle.jdbc.OracleDriver

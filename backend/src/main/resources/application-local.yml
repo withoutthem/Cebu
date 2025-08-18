@@ -2,9 +2,9 @@
 
 spring:
   datasource:
-    url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
-    username: admin
-    password: hmm1234!@#
+    url: jdbc:oracle:thin:@//localhost:1527/FREEPDB1
+    username: CBUI_WAS
+    password: app1234
     driver-class-name: oracle.jdbc.OracleDriver
 
 swagger:
