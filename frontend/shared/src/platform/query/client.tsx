@@ -1,10 +1,10 @@
 // shared/src/platform/query/client.tsx
-import React, { useRef } from 'react';
+import { type FC, type ReactNode, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { loadRqEnv } from './env';
 
 export interface QueryProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const createQueryClient = () => {
@@ -22,8 +22,8 @@ export const createQueryClient = () => {
   });
 };
 
-export const QueryProvider: React.FC<QueryProviderProps> = ({ children }) => {
+export const QueryProvider: FC<QueryProviderProps> = ({ children }) => {
   const ref = useRef<QueryClient | null>(null);
-  if (!ref.current) ref.current = createQueryClient();
+  ref.current ??= createQueryClient();
   return <QueryClientProvider client={ref.current!}>{children}</QueryClientProvider>;
 };

@@ -1,32 +1,37 @@
-# application.yml
-
-spring:
-  application:
-    name: chatbot-ui
-  profiles:
-    active: local
-  datasource:
-    driver-class-name: oracle.jdbc.OracleDriver
-  jackson:
-    property-naming-strategy: SNAKE_CASE
-    serialization:
-      fail-on-empty-beans: false
-
-mybatis:
-  mapper-locations: classpath:/mapper/**/*.xml
-  type-aliases-package: com.hmm.app.domain
-  configuration:
-    map-underscore-to-camel-case: true
-    default-fetch-size: 100
-    default-executor-type: REUSE
-
+# =================================================
+# BASE CONFIGURATION (Default)
+# =================================================
 server:
   port: 8080
-  servlet:
-    context-path: /api
+  netty:
+    connection-timeout: 2s
+    idle-timeout: 30s
+# --- Spring Boot Active Profile ---
+spring:
+  profiles:
+    active: local
 
+  # --- R2DBC (Production Placeholder) ---
+  r2dbc:
+    # 운영 DB 정보는 CI/CD 파이프라인에서 환경 변수로 주입
+    url: r2dbc:oracle://${PROD_DB_HOST}:${PROD_DB_PORT}/${PROD_DB_SERVICE_NAME}
+    username: ${PROD_DB_USERNAME}
+    password: ${PROD_DB_PASSWORD}
+    # TODO: Connection Pooling 추후 올릴 예정
+    pool:
+      enabled: true
+      initial-size: 20
+      max-size: 100
+      validation-query: SELECT 1 FROM DUAL
 logging:
   level:
-    root: INFO
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
+    root: WARN
+    com.hmm.backend: INFO
+
+# --- API Docs ---
+# 운영 환경에서는 기본적으로 비활성화
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

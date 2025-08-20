@@ -28,6 +28,7 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
 
+
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["shared/src/*"]

@@ -1,16 +1,25 @@
-# application-dev.yml
+# =================================================
+# DEVELOPMENT PROFILE OVERRIDES
+# =================================================
+server:
+  port: 8080
 
 spring:
-  datasource:
-    url: jdbc:oracle:thin:@dev-db-server:1527/devdb
-    username: dev_user
-    password: dev_pass
-    driver-class-name: oracle.jdbc.OracleDriver
-
-swagger:
-  enabled: true
-
+  r2dbc:
+    url: r2dbc:oracle://thin:@//172.17.36.104:1527/dhdapk.devdb.np2020kr.oraclevcn.com
+    username: CBUI_WAS
+    password: ${DEV_DB_PASSWORD}
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
 logging:
   level:
-    root: INFO
-    org.springframework.web: DEBUG
+    com.hmm.backend: DEBUG
+# --- API Docs ---
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html

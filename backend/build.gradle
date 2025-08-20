@@ -19,10 +19,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-reactor-netty'
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.9'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
+	// Spring Data R2DBC 스타터(MyBatis 사용 불가 - WebFlux 환경에서 R2DBC 사용)
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+	// Oracle R2DBC 드라이버
+	implementation 'com.oracle.database.r2dbc:oracle-r2dbc:1.2.0' // 최신 버전 확인 권장
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

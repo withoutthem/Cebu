@@ -1,7 +1,7 @@
 services:
   oracle:
-    image: gvenzl/oracle-free:23-slim
-    container_name: oracle-free
+    image: gvenzl/oracle-free:latest
+    container_name: oracle-23c-free
     ports:
       - "1527:1521"
       - "5500:5500"

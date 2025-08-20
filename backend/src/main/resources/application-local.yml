@@ -1,16 +1,35 @@
-# application-local.yml
-
+# =================================================
+# LOCAL PROFILE OVERRIDES
+# =================================================
 spring:
-  datasource:
-    url: jdbc:oracle:thin:@//localhost:1527/FREEPDB1
+  # --- R2DBC (Local Docker Oracle) ---
+  r2dbc:
+    url: r2dbc:oracle://localhost:1527/FREEPDB1
     username: CBUI_WAS
-    password: app1234
-    driver-class-name: oracle.jdbc.OracleDriver
+    password: hmm1234**
+    pool:
+      enabled: true
+      initial-size: 2
+      max-size: 5
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
 
-swagger:
-  enabled: true
-
+# --- Logging (Local Override) ---
 logging:
   level:
-    root: DEBUG
-    org.springframework.web: DEBUG
+    # 로컬에서는 상세한 로그 확인을 위해 DEBUG 레벨 사용
+    root: INFO
+    org.springframework.data.r2dbc: DEBUG
+    io.r2dbc.spi.ConnectionFactory: DEBUG
+
+# --- API Docs (Local Override) ---
+# 로컬 개발 시 API 문서 확인을 위해 활성화
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
