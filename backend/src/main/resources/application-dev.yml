@@ -6,8 +6,8 @@ server:
 
 spring:
   r2dbc:
-    url: r2dbc:oracle://thin:@//172.17.36.104:1527/dhdapk.devdb.np2020kr.oraclevcn.com
-    username: CBUI_WAS
+    url: ${DEV_DB_URL}
+    username: ${DEV_DB_USERNAME}
     password: ${DEV_DB_PASSWORD}
     pool:
       enabled: true

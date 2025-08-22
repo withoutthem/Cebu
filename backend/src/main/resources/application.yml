@@ -14,7 +14,7 @@ spring:
   # --- R2DBC (Production Placeholder) ---
   r2dbc:
     # 운영 DB 정보는 CI/CD 파이프라인에서 환경 변수로 주입
-    url: r2dbc:oracle://${PROD_DB_HOST}:${PROD_DB_PORT}/${PROD_DB_SERVICE_NAME}
+    url: ${PROD_DB_URL}
     username: ${PROD_DB_USERNAME}
     password: ${PROD_DB_PASSWORD}
     # TODO: Connection Pooling 추후 올릴 예정
@@ -27,11 +27,3 @@ logging:
   level:
     root: WARN
     com.hmm.backend: INFO
-
-# --- API Docs ---
-# 운영 환경에서는 기본적으로 비활성화
-springdoc:
-  api-docs:
-    enabled: false
-  swagger-ui:
-    enabled: false
