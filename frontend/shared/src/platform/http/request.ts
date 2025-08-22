@@ -71,7 +71,7 @@ export const request = async <T>(
   }
 };
 
-// 간편 메서드
+// 메서드
 export const GET = <T>(url: string, config?: HttpConfig) => request<T>('get', url, config);
 
 export const POST = <T, B = unknown>(url: string, body?: B, config?: HttpConfig) =>

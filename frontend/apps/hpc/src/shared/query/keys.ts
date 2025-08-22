@@ -8,4 +8,5 @@ export const qk = {
     room: (roomId: string) => ['chat', 'room', roomId] as const,
     roomMessages: (roomId: string) => ['chat', 'room', roomId, 'messages'] as const,
   },
+  testData: (id: string) => ['testData', id] as const,
 } as const;

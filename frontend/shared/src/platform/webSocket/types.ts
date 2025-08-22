@@ -44,6 +44,8 @@ export interface CreateWsClientOptions {
   reconnectMaxMs?: number;
   /** 연결/응답 상한선 오버라이드 */
   timeoutMs?: number;
+  /** Client 상태 변경 시 호출될 콜백 */
+  onStatusChange?: (status: WsStatus) => void;
 }
 
 /** 구독 핸들 */

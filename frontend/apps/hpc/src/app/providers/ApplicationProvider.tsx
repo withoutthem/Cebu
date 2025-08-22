@@ -1,8 +1,9 @@
 // src/app/providers/AppProviders.tsx
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../../styles/theme';
-import { type ReactNode, StrictMode } from 'react';
+import { type ReactNode } from 'react';
 import { QueryProvider } from '@shared/platform/query';
+import { WebSocketClientProvider } from './WebSocketClientProvider';
 
 interface ApplicationProvidersProps {
   children: ReactNode;
@@ -10,14 +11,11 @@ interface ApplicationProvidersProps {
 
 const ApplicationProvider = ({ children }: ApplicationProvidersProps) => {
   return (
-    <StrictMode>
-      <QueryProvider>
-        <ThemeProvider theme={theme}>
-          {/* <BrowserRouter>가 여기서 제거됩니다. */}
-          {children}
-        </ThemeProvider>
-      </QueryProvider>
-    </StrictMode>
+    <QueryProvider>
+      <WebSocketClientProvider>
+        <ThemeProvider theme={theme}>{children}</ThemeProvider>
+      </WebSocketClientProvider>
+    </QueryProvider>
   );
 };
 

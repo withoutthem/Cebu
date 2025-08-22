@@ -97,6 +97,9 @@ class InternalWsClient implements WsClient {
   /** 오프라인/연결중 송신 큐 */
   private readonly sendQueue: IPublishParams[] = [];
 
+  /** 상태 변경 콜백 (옵션) */
+  private readonly onStatusChange?: (status: WsStatus) => void;
+
   constructor(opts?: CreateWsClientOptions) {
     const env = loadWsEnv();
     this.url = opts?.url ?? resolveSockJsUrl(env);
@@ -106,6 +109,11 @@ class InternalWsClient implements WsClient {
     this.timeoutMs = opts?.timeoutMs ?? env.TIMEOUT_MS;
     this.debug = defaultDebug(opts?.debug);
 
+    // 상태 변경 콜백 (옵션)
+    if (opts?.onStatusChange) {
+      this.onStatusChange = opts.onStatusChange;
+    }
+
     this.stomp = new Client({
       webSocketFactory: () => new SockJS(this.url),
       reconnectDelay: this.minMs,
@@ -114,6 +122,7 @@ class InternalWsClient implements WsClient {
       debug: (s: string) => this.debug(s),
       onConnect: () => {
         this.status = 'open';
+        this.onStatusChange?.('open'); // 상태 변경 콜백 호출
         this.connectAttempt = 0;
         this.debug('connected');
 
@@ -144,6 +153,7 @@ class InternalWsClient implements WsClient {
       },
       onWebSocketClose: (evt) => {
         this.status = 'closed';
+        this.onStatusChange?.('closed'); // 상태 변경 콜백 호출
         this.debug(`ws closed (code=${(evt as CloseEvent).code})`);
         if (!this.stopped) {
           this.connectAttempt += 1;
@@ -170,6 +180,7 @@ class InternalWsClient implements WsClient {
 
     if (!this.connectOnce) {
       this.status = 'connecting';
+      this.onStatusChange?.('connecting'); // 상태 변경 콜백 호출
       this.connectOnce = new Promise<void>((resolve, reject) => {
         let done = false;
 
@@ -206,10 +217,12 @@ class InternalWsClient implements WsClient {
   public disconnect = async (): Promise<void> => {
     this.stopped = true;
     this.status = 'closing';
+    this.onStatusChange?.('closing'); // 상태 변경 콜백 호출
     try {
       await this.stomp.deactivate();
     } finally {
       this.status = 'closed';
+      this.onStatusChange?.('closed'); // 상태 변경 콜백 호출
       CLIENTS.delete(this);
       this.debug('deactivated');
     }
