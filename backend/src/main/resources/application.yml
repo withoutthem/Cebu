@@ -10,6 +10,8 @@ server:
 spring:
   profiles:
     active: local
+  aes:
+    key: hmmcbui123456789
 
   # --- R2DBC (Production Placeholder) ---
   r2dbc:
