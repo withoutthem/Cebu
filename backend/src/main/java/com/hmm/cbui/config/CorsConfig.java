@@ -28,6 +28,7 @@ public class CorsConfig {
         // swagger도 보려면 필요시 추가:
         source.registerCorsConfiguration("/v3/api-docs/**", cfg);
         source.registerCorsConfiguration("/swagger-ui/**", cfg);
+        source.registerCorsConfiguration("/swagger-ui.html", cfg);
 
         return new CorsWebFilter(source);
     }
