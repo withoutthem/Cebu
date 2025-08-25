@@ -2,7 +2,7 @@
 # BASE CONFIGURATION (Default)
 # =================================================
 server:
-  port: 8080
+  port: 18080
   netty:
     connection-timeout: 2s
     idle-timeout: 30s

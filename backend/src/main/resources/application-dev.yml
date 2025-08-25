@@ -2,7 +2,7 @@
 # DEVELOPMENT PROFILE OVERRIDES
 # =================================================
 server:
-  port: 8080
+  port: 18080
 
 spring:
   r2dbc:
