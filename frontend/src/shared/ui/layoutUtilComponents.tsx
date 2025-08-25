@@ -5,3 +5,7 @@ export const AlignCenter: StyledComponent<BoxProps> = styled(Box)({
   display: 'flex',
   alignItems: 'center',
 })
+
+export const FlexBox = styled(Box)({
+  display: 'flex',
+})

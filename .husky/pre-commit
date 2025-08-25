@@ -1,11 +1,17 @@
 #!/bin/sh
 . "$(dirname "$0")/husky.sh"
 
-# 1) Lint/Prettier (루트 lint-staged 설정 사용)
-npx lint-staged || exit 1
+# 안전모드 + 로그
+set -euo pipefail
 
-# 2) TS 타입체크 (frontend 앱 전체)
-npm --prefix frontend --silent run typecheck || exit 1
+echo "🔧 [pre-commit] 1) lint-staged 실행"
+npx lint-staged
 
-# 3) FE 앱 테스트
-npm --prefix frontend --silent run test || exit 1
+echo "🔎 [pre-commit] 2) TypeScript 타입체크(frontend)"
+npm --prefix frontend run typecheck
+
+echo "🧪 [pre-commit] 3) Jest 테스트(frontend)"
+# 기본은 package.json의 설정을 사용.
+npm --prefix frontend run test
+
+echo "✅ [pre-commit] 완료"
