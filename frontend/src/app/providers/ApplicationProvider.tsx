@@ -2,8 +2,8 @@
 import { ThemeProvider } from '@mui/material/styles'
 import theme from '../../styles/theme'
 import { type ReactNode } from 'react'
-import { WebSocketClientProvider } from './WebSocketClientProvider'
-import { QueryProvider } from '../../shared/platform/query'
+// import { WebSocketClientProvider } from './WebSocketClientProvider'
+import { QueryProvider } from '@shared/platform/query'
 
 interface ApplicationProvidersProps {
   children: ReactNode
@@ -12,9 +12,9 @@ interface ApplicationProvidersProps {
 const ApplicationProvider = ({ children }: ApplicationProvidersProps) => {
   return (
     <QueryProvider>
-      <WebSocketClientProvider>
-        <ThemeProvider theme={theme}>{children}</ThemeProvider>
-      </WebSocketClientProvider>
+      {/*<WebSocketClientProvider>*/}
+      <ThemeProvider theme={theme}>{children}</ThemeProvider>
+      {/*</WebSocketClientProvider>*/}
     </QueryProvider>
   )
 }

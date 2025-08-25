@@ -1,28 +1,19 @@
-// /src/services/testService.ts
+// src/domains/test/services/testService.ts
+import { GET, POST } from '@/shared/platform/http'
 
-// API 응답 데이터의 타입 정의
-
-import { GET, type HttpResponse } from '@shared/platform/http'
-
-export interface TestData {
-  id: string
-  name: string
-  timestamp: string
+export interface LiveChatMessageDto {
+  sender: string
+  message: string
 }
 
-/**
- * 테스트 관련 API 호출을 담당하는 서비스 객체
- */
-const testService = {
-  /**
-   * ID를 기반으로 테스트 데이터를 가져옵니다.
-   * @param id 데이터 ID
-   */
-  async fetchTestData(id: string): Promise<HttpResponse<TestData>> {
-    // GET 유틸을 사용하여 특정 엔드포인트에서 데이터를 가져옵니다.
-    return GET<TestData>(`https://jsonplaceholder.typicode.com/todos/${id}`)
+export const testService = {
+  restPing: async (): Promise<string> => {
+    const res = await GET<string>('/test/rest')
+    return res.data
+  },
+
+  // ⬇️ HttpResponse를 UI로 올리지 않고 여기서 언래핑 → Promise<void>
+  broadcast: async (roomId: string, body: LiveChatMessageDto): Promise<void> => {
+    await POST<void, LiveChatMessageDto>(`/test/broadcast/${encodeURIComponent(roomId)}`, body)
   },
 }
-
-// 클래스 인스턴스가 아닌, 단일 객체(싱글턴)로 export합니다.
-export default testService

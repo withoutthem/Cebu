@@ -1,32 +1,41 @@
-package com.hmm.cbui.config; // 실제 패키지명 확인 필요
+package com.hmm.cbui.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.web.reactive.function.server.RequestPredicate;
 import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
+import static org.springframework.web.reactive.function.server.RequestPredicates.path;
+import static org.springframework.web.reactive.function.server.RouterFunctions.resources;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
 public class SpaRoutingConfiguration {
 
     @Bean
+    @Order(Ordered.LOWEST_PRECEDENCE)
     public RouterFunction<ServerResponse> spaRouter() {
-        RouterFunction<ServerResponse> staticResourceRouter =
-                RouterFunctions.resources("/**", new ClassPathResource("static/"));
+        // 정적 리소스 제공
+        RouterFunction<ServerResponse> staticResources =
+                resources("/**", new ClassPathResource("static/"));
 
-        RouterFunction<ServerResponse> spaFallbackRouter =
-                route(GET("/**"), request -> {
-                    String path = request.path();
-                    if (path.startsWith("/api/") || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
-                        return ServerResponse.notFound().build();
-                    }
-                    return ServerResponse.ok().bodyValue(new ClassPathResource("static/index.html"));
-                });
+        // SPA Fallback: /api/**, /v3/api-docs/**, /swagger-ui/** 는 '제외'
+        RequestPredicate isSpaPage =
+                GET("/**")
+                        .and(path("/api/**").negate())
+                        .and(path("/v3/api-docs/**").negate())
+                        .and(path("/swagger-ui/**").negate());
 
-        return staticResourceRouter.and(spaFallbackRouter);
+        RouterFunction<ServerResponse> spaFallback =
+                route(isSpaPage, req ->
+                        ServerResponse.ok().bodyValue(new ClassPathResource("static/index.html"))
+                );
+
+        return staticResources.and(spaFallback);
     }
 }

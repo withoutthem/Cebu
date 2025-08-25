@@ -1,202 +1,207 @@
-// /src/pages/TestPage.tsx
+// src/pages/TestPage.tsx
+import { useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, TextField, Typography } from '@mui/material'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { qk } from '@/shared/query/keys'
+import { type LiveChatMessageDto, testService } from '@/domains/test/services/testService'
 
-// --- Type Definitions ---
-// 백엔드의 StompFrame.java 와 일치하는 타입 정의
-// interface StompFrame {
-//   destination: string;
-//   body: any;
-// }
+/** 안전한 문자열 변환 (eslint/no-base-to-string, restrict-template-expressions 대응) */
+function toSafeString(input: unknown): string {
+  if (typeof input === 'string') return input
+  if (typeof input === 'number' || typeof input === 'boolean' || input == null) return String(input)
+  try {
+    return JSON.stringify(input)
+  } catch {
+    return '[Unserializable]'
+  }
+}
 
-// 백엔드의 LiveChatMessageDto.java 와 일치하는 타입 정의
-// interface LiveChatMessageDto {
-//   roomId: string;
-//   sender: string;
-//   content: string;
-//   timestamp: string;
-// }
-
-// type WsStatus = 'connecting' | 'open' | 'closing' | 'closed';
+/** 로그 항목 (index 키 사용 금지 → 고유 id 생성) */
+type LogEntry = { id: string; text: string }
+const makeId = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 const TestPage = () => {
-  // --- State Management ---
-  // const [status, setStatus] = useState<WsStatus>('closed');
-  // const [messages, setMessages] = useState<string[]>([]);
-  // const [roomId, setRoomId] = useState('general'); // 기본 채팅방 ID
-  // const [sender, setSender] = useState('Victor'); // 기본 발신자 이름
-  // const [messageInput, setMessageInput] = useState('');
-  // const ws = useRef<WebSocket | null>(null);
-  //
-  // // --- Helper Functions ---
-  // const logMessage = useCallback((msg: string) => {
-  //   setMessages((prev) => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
-  // }, []);
-  //
-  // // --- Message Sending Logic ---
-  // const sendJson = useCallback(
-  //   (frame: StompFrame) => {
-  //     if (status !== 'open' || !ws.current) {
-  //       logMessage('⚠️ WebSocket is not connected.');
-  //       return;
-  //     }
-  //     ws.current.send(JSON.stringify(frame));
-  //   },
-  //   [status, logMessage],
-  // );
-  //
-  // // 구독 메시지 전송
-  // const handleSubscribe = useCallback(() => {
-  //   const frame: StompFrame = {
-  //     destination: '/app/livechat/subscribe',
-  //     body: { roomId: roomId },
-  //   };
-  //   sendJson(frame);
-  //   logMessage(`[발신] 구독 요청: ${roomId}`);
-  // }, [roomId, sendJson, logMessage]);
-  //
-  // // --- WebSocket Event Handlers ---
-  // const onOpen = useCallback(() => {
-  //   setStatus('open');
-  //   logMessage('✅ WebSocket Connected.');
-  //   // 연결 성공 시 자동으로 구독 메시지 전송
-  //   handleSubscribe();
-  // }, [handleSubscribe, logMessage]);
-  //
-  // const onMessage = useCallback(
-  //   (event: MessageEvent) => {
-  //     try {
-  //       const receivedMsg: LiveChatMessageDto = JSON.parse(event.data);
-  //       logMessage(`[수신] ${receivedMsg.sender}: ${receivedMsg.content}`);
-  //     } catch (error) {
-  //       logMessage(`[오류] 잘못된 형식의 메시지 수신: ${event.data}`);
-  //     }
-  //   },
-  //   [logMessage],
-  // );
-  //
-  // const onError = useCallback(
-  //   (event: Event) => {
-  //     logMessage(`❌ WebSocket Error: ${event.type}`);
-  //     setStatus('closed');
-  //   },
-  //   [logMessage],
-  // );
-  //
-  // const onClose = useCallback(() => {
-  //   logMessage('🔌 WebSocket Disconnected.');
-  //   setStatus('closed');
-  // }, [logMessage]);
-  //
-  // // --- WebSocket Connection Logic ---
-  // const connect = useCallback(() => {
-  //   if (ws.current && ws.current.readyState < 2) {
-  //     return;
-  //   }
-  //   setStatus('connecting');
-  //   logMessage(`🔌 Connecting to ws://localhost:8080/ws/chat/${roomId}...`);
-  //
-  //   ws.current = new WebSocket(`ws://localhost:8080/ws/chat/${roomId}`);
-  //   ws.current.onopen = onOpen;
-  //   ws.current.onmessage = onMessage;
-  //   ws.current.onerror = onError;
-  //   ws.current.onclose = onClose;
-  // }, [roomId, onOpen, onMessage, onError, onClose, logMessage]);
-  //
-  // const disconnect = () => {
-  //   ws.current?.close();
-  // };
-  //
-  // // 채팅 메시지 전송
-  // const handleSendMessage = () => {
-  //   if (!messageInput.trim()) return;
-  //   const messageDto: LiveChatMessageDto = {
-  //     roomId: roomId,
-  //     sender: sender,
-  //     content: messageInput,
-  //     timestamp: new Date().toISOString(),
-  //   };
-  //   const frame: StompFrame = {
-  //     destination: '/app/livechat/send',
-  //     body: messageDto,
-  //   };
-  //   sendJson(frame);
-  //   logMessage(`[발신] ${sender}: ${messageInput}`);
-  //   setMessageInput('');
-  // };
-  //
-  // // --- Effects ---
-  // useEffect(() => {
-  //   return () => {
-  //     ws.current?.close();
-  //   };
-  // }, []);
+  // UI state
+  const [roomId, setRoomId] = useState<string>('')
+  const [sender, setSender] = useState<string>('tester')
+  const [messageInput, setMessageInput] = useState<string>('hello')
+
+  const [logs, setLogs] = useState<LogEntry[]>([])
+  const logRef = useRef<HTMLDivElement | null>(null)
+
+  const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined
+
+  // 1) REST Ping (수동 트리거) — TData=string, TError=unknown(기본) 대신 안전하게 지정
+  const pingQuery = useQuery<string, Error>({
+    queryKey: qk.test.restPing(),
+    queryFn: testService.restPing, // Promise<string>
+    enabled: false,
+    refetchOnWindowFocus: false,
+  })
+
+  const handlePing = async () => {
+    const res = await pingQuery.refetch() // QueryObserverResult<string, Error>
+    const line =
+      res.data != null
+        ? `[PING OK] ${new Date().toLocaleTimeString()} - ${toSafeString(res.data)}`
+        : `[PING FAIL] ${new Date().toLocaleTimeString()} - ${toSafeString(res.error?.message)}`
+    setLogs((prev) => [...prev, { id: makeId(), text: line }])
+    requestAnimationFrame(() => {
+      logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
+    })
+  }
+
+  // 2) Broadcast 테스트 (Mutation) — TData=void, TError=Error, TVariables=LiveChatMessageDto
+  const canBroadcast = useMemo(() => roomId.trim().length > 0, [roomId])
+
+  const broadcastMutation = useMutation<void, Error, LiveChatMessageDto>({
+    mutationKey: qk.test.broadcast(roomId || '_'),
+    mutationFn: (payload) => testService.broadcast(roomId, payload),
+    onSuccess: () => {
+      setLogs((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          text: `[BROADCAST OK] ${new Date().toLocaleTimeString()} - room="${roomId}"`,
+        },
+      ])
+      requestAnimationFrame(() => {
+        logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
+      })
+    },
+    onError: (e) => {
+      setLogs((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          text: `[BROADCAST FAIL] ${new Date().toLocaleTimeString()} - ${toSafeString(e.message)}`,
+        },
+      ])
+      requestAnimationFrame(() => {
+        logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
+      })
+    },
+  })
+
+  const handleBroadcast = () => {
+    const body: LiveChatMessageDto = { sender: sender || 'tester', message: messageInput || '' }
+    broadcastMutation.mutate(body)
+  }
+
+  const pingStatus: 'idle' | 'loading' | 'success' | 'error' = pingQuery.isFetching
+    ? 'loading'
+    : pingQuery.isSuccess
+      ? 'success'
+      : pingQuery.isError
+        ? 'error'
+        : 'idle'
 
   return (
     <Box p={3}>
       <Typography variant="h4" gutterBottom>
-        🚀 HMM 챗봇UI 웹소켓 테스트 페이지입니다.! (아직안됨)
+        🚀 HMM 챗봇UI 테스트 페이지 (REST 먼저 점검)
       </Typography>
 
-      {/* --- Connection Control --- */}
+      {/* --- Env 디버그 --- */}
       <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6">1. 연결 관리</Typography>
-        <Box display="flex" alignItems="center" gap={2} mt={1}>
+        <Typography variant="h6">0. 환경 확인</Typography>
+        <Box mt={1}>
+          <Chip
+            sx={{ mr: 1 }}
+            label={`API_BASE=${apiBase ?? '(unset)'}`}
+            color={apiBase ? 'primary' : 'default'}
+            variant="outlined"
+          />
+          <Chip
+            label={`Ping: ${pingStatus}`}
+            color={
+              pingStatus === 'success'
+                ? 'success'
+                : pingStatus === 'error'
+                  ? 'error'
+                  : pingStatus === 'loading'
+                    ? 'warning'
+                    : 'default'
+            }
+          />
+          <Button
+            onClick={handlePing}
+            variant="contained"
+            size="small"
+            sx={{ ml: 2 }}
+            disabled={pingQuery.isFetching}
+          >
+            REST /test 핑
+          </Button>
+        </Box>
+      </Paper>
+
+      {/* --- Broadcast 테스트 --- */}
+      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6">1. Broadcast 테스트 (POST /test/broadcast/:roomId)</Typography>
+        <Box display="flex" alignItems="center" gap={2} mt={1} flexWrap="wrap">
           <TextField
             label="Room ID"
             variant="outlined"
             size="small"
-            // value={roomId}
-            // onChange={(e) => setRoomId(e.target.value)}
-            disabled={status === 'open'}
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            sx={{ minWidth: 180 }}
           />
-          <Button
-            variant="contained"
-            // onClick={connect}
-            disabled={status === 'connecting' || status === 'open'}
-          >
-            연결 및 구독
-          </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            // onClick={disconnect}
-            disabled={status !== 'open'}
-          >
-            연결 끊기
-          </Button>
-          <Chip label={`상태: ${status}`} color={status === 'open' ? 'success' : 'default'} />
-        </Box>
-      </Paper>
-
-      {/* --- Message Sending --- */}
-      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6">2. 메시지 발신</Typography>
-        <Box display="flex" alignItems="center" gap={2} mt={1}>
           <TextField
             label="Sender"
             variant="outlined"
             size="small"
-            // value={sender}
-            // onChange={(e) => setSender(e.target.value)}
+            value={sender}
+            onChange={(e) => setSender(e.target.value)}
+            sx={{ minWidth: 160 }}
           />
           <TextField
             label="Message"
             variant="outlined"
             size="small"
-            fullWidth
-            // value={messageInput}
-            // onChange={(e) => setMessageInput(e.target.value)}
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            sx={{ minWidth: 260, flex: 1 }}
           />
-          {/*<Button variant="contained" onClick={handleSendMessage} disabled={status !== 'open'}>*/}
-          {/*  전송*/}
-          {/*</Button>*/}
+          <Button
+            variant="contained"
+            onClick={handleBroadcast}
+            disabled={!canBroadcast || broadcastMutation.isPending}
+          >
+            Broadcast 전송
+          </Button>
+          <Chip
+            label={
+              broadcastMutation.isPending
+                ? 'sending...'
+                : broadcastMutation.isSuccess
+                  ? 'success'
+                  : broadcastMutation.isError
+                    ? 'error'
+                    : 'idle'
+            }
+            color={
+              broadcastMutation.isPending
+                ? 'warning'
+                : broadcastMutation.isSuccess
+                  ? 'success'
+                  : broadcastMutation.isError
+                    ? 'error'
+                    : 'default'
+            }
+          />
         </Box>
       </Paper>
 
-      {/* --- Message Log --- */}
+      {/* --- 로그 --- */}
       <Paper elevation={2} sx={{ p: 2 }}>
-        <Typography variant="h6">3. 메시지 로그</Typography>
+        <Typography variant="h6">2. 로그</Typography>
         <Box
+          ref={logRef}
           sx={{
             border: '1px solid #ccc',
             borderRadius: '4px',
@@ -207,11 +212,14 @@ const TestPage = () => {
             fontFamily: 'monospace',
             fontSize: '0.9rem',
             backgroundColor: '#f5f5f5',
+            whiteSpace: 'pre-wrap',
           }}
         >
-          {/*{messages.map((msg, i) => (*/}
-          {/*  <div key={i}>{msg}</div>*/}
-          {/*))}*/}
+          {logs.length === 0 ? (
+            <div>로그가 없습니다. 먼저 "REST /test 핑" 또는 "Broadcast 전송"을 눌러보세요.</div>
+          ) : (
+            logs.map((l) => <div key={l.id}>{l.text}</div>)
+          )}
         </Box>
       </Paper>
     </Box>

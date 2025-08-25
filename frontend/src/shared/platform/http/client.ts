@@ -76,12 +76,26 @@ const createClient = (): AxiosLike => {
 
   // 요청 인터셉터 (예: 토큰)
   instance.interceptors.request.use((config) => {
-    const headers = AxiosHeaders.from(config.headers)
+    // 헤더는 객체화
+    config.headers = AxiosHeaders.from(config.headers)
+
+    // 1) 토큰
     const token = (globalThis as Record<string, unknown>).__ACCESS_TOKEN__
-    if (typeof token === 'string') {
-      headers.set('Authorization', `Bearer ${token}`)
+    if (typeof token === 'string' && token) {
+      ;(config.headers as AxiosHeaders).set('Authorization', `Bearer ${token}`)
     }
-    config.headers = headers
+
+    // 2) Content-Type: "본문이 있을 때만" 설정
+    const hasBody =
+      typeof config.data !== 'undefined' &&
+      config.method &&
+      ['post', 'put', 'patch', 'delete'].includes(config.method.toLowerCase())
+    if (hasBody && !(config.headers as AxiosHeaders).has('Content-Type')) {
+      ;(config.headers as AxiosHeaders).set('Content-Type', 'application/json')
+    } else if (!hasBody) {
+      ;(config.headers as AxiosHeaders).delete('Content-Type')
+    }
+
     return config
   })
 

@@ -14,7 +14,7 @@ public class TestController {
 
     private final LiveChatService liveChatService; // 주입 대상을 LiveChatService로 변경
 
-    @GetMapping
+    @GetMapping("/rest")
     public Mono<ResponseEntity<String>> testRestApi() {
         return Mono.just(ResponseEntity.ok("HTTP REST API is working!"));
     }
