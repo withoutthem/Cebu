@@ -6,6 +6,8 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
 
+    "noEmit": true,
+
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -27,6 +29,7 @@
     "useDefineForClassFields": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
