@@ -1,9 +1,56 @@
-// client.ts — 안정/성능 최우선 WebSocket 래퍼
+// client.ts — 안정/성능 최우선 WebSocket 래퍼 (VITE env 전용)
 // - 지수백오프(+지터), 오프라인 감지, 하트비트(유휴 시만 ping), 대기큐(상한/드롭), RPC(id 매칭/Abort), 자동 재구독
 // - 인증/정책 close code 대응(토큰 재발급 트리거), 선택적 subprotocols 지원
 // - ESLint: no-unsafe-return/assignment 대응(unknown 내로잉), exactOptionalPropertyTypes 대응
 
-import { getRuntimeAccessToken, WS_ENV } from './env'
+// ⬇️ [변경] env.ts 제거 대신 VITE 값 직접 사용
+function num(v: unknown, fallback: number): number {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string') {
+    const n = Number(v)
+    if (!Number.isNaN(n)) return n
+  }
+  return fallback
+}
+function bool(v: unknown, fallback: boolean): boolean {
+  if (typeof v === 'boolean') return v
+  if (typeof v === 'string') {
+    const s = v.trim().toLowerCase()
+    if (s === 'true' || s === '1') return true
+    if (s === 'false' || s === '0') return false
+  }
+  return fallback
+}
+function viteEnv() {
+  if (typeof import.meta === 'undefined') return {} as Record<string, string | undefined>
+  const env = (import.meta as ImportMeta).env as {
+    VITE_WS_BASE_URL?: string
+    VITE_WS_PATH?: string
+    VITE_WS_RETRY_MIN_MS?: string
+    VITE_WS_RETRY_MAX_MS?: string
+    VITE_WS_HEARTBEAT_MS?: string
+    VITE_WS_REQUEST_TIMEOUT_MS?: string
+    VITE_WS_WITH_TOKEN_QUERY?: string
+    VITE_ACCESS_TOKEN?: string
+  }
+  return env ?? {}
+}
+const V = viteEnv()
+// 기본값은 현행 env.ts와 동일/유사하게 유지
+const V_WS_BASE_URL = V.VITE_WS_BASE_URL ?? '/ws'
+const V_WS_PATH = V.VITE_WS_PATH ?? ''
+const V_WS_RETRY_MIN_MS = num(V.VITE_WS_RETRY_MIN_MS, 300)
+const V_WS_RETRY_MAX_MS = num(V.VITE_WS_RETRY_MAX_MS, 10_000)
+const V_WS_HEARTBEAT_MS = num(V.VITE_WS_HEARTBEAT_MS, 25_000)
+const V_WS_REQUEST_TIMEOUT_MS = num(V.VITE_WS_REQUEST_TIMEOUT_MS, 15_000)
+const V_WS_WITH_TOKEN_QUERY = bool(V.VITE_WS_WITH_TOKEN_QUERY, true)
+const V_RUNTIME_ACCESS_TOKEN = V.VITE_ACCESS_TOKEN
+
+function getRuntimeAccessToken(): string | undefined {
+  const g = globalThis as unknown as { __APP_CONF__?: { ACCESS_TOKEN?: string } }
+  return g.__APP_CONF__?.ACCESS_TOKEN ?? V_RUNTIME_ACCESS_TOKEN
+}
+
 import type {
   BackoffPolicy,
   HeartbeatPolicy,
@@ -36,7 +83,8 @@ function buildWsUrl(input: {
   params?: Record<string, unknown>
 }): string {
   const origin = (globalThis as unknown as { location?: Location }).location?.origin
-  const u = new URL(input.url ?? input.baseURL ?? WS_ENV.WS_BASE_URL, origin)
+  // ⬇️ [변경] WS_ENV.WS_BASE_URL → V_WS_BASE_URL
+  const u = new URL(input.url ?? input.baseURL ?? V_WS_BASE_URL, origin)
   if (input.path) {
     const left = u.pathname.endsWith('/') ? u.pathname.slice(0, -1) : u.pathname
     const right = input.path.startsWith('/') ? input.path : `/${input.path}`
@@ -56,7 +104,6 @@ function buildWsUrl(input: {
 }
 function safeParseJson(text: string): unknown {
   try {
-    // unknown 유지 → no-unsafe-return OK
     return JSON.parse(text)
   } catch {
     return text
@@ -89,7 +136,7 @@ const DefaultParser: Parser = {
   decode: (d) => {
     if (typeof d === 'string') return safeParseJson(d)
     if (d instanceof ArrayBuffer) return safeParseJson(new TextDecoder().decode(d))
-    return d // Blob인 경우 상위에서 필요 시 처리
+    return d
   },
 }
 
@@ -133,15 +180,16 @@ export class WsClient {
     }
   >()
   private readonly queue: (string | ArrayBufferLike | Blob)[] = []
-  private readonly maxQueue = 5_000 // 송신 큐 상한(필요 시 조정)
+  private readonly maxQueue = 5_000
 
   private reconnectAttempt = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   private hbTimer: ReturnType<typeof setInterval> | null = null
   private heartbeatMiss = 0
-  private readonly hbBaseInterval: number = WS_ENV.WS_HEARTBEAT_MS
-  private hbIdleFactor = 1 // 비가시성 시 2배
+  // ⬇️ [변경] WS_ENV.WS_HEARTBEAT_MS → V_WS_HEARTBEAT_MS
+  private readonly hbBaseInterval: number = V_WS_HEARTBEAT_MS
+  private hbIdleFactor = 1
 
   private lastActivity = Date.now()
   private online = typeof navigator !== 'undefined' ? navigator.onLine : true
@@ -180,22 +228,23 @@ export class WsClient {
 
   constructor(cfg: WsConfig = {}) {
     const backoff: BackoffPolicy = {
-      minMs: cfg.backoff?.minMs ?? WS_ENV.WS_RETRY_MIN_MS,
-      maxMs: cfg.backoff?.maxMs ?? WS_ENV.WS_RETRY_MAX_MS,
+      // ⬇️ [변경] WS_ENV.* → V_* 상수들
+      minMs: cfg.backoff?.minMs ?? V_WS_RETRY_MIN_MS,
+      maxMs: cfg.backoff?.maxMs ?? V_WS_RETRY_MAX_MS,
       factor: cfg.backoff?.factor ?? 2,
       jitter: cfg.backoff?.jitter ?? 0.2,
       maxRetries: cfg.backoff?.maxRetries ?? Number.POSITIVE_INFINITY,
     }
     const heartbeat: HeartbeatPolicy = {
       enabled: cfg.heartbeat?.enabled ?? true,
-      intervalMs: cfg.heartbeat?.intervalMs ?? WS_ENV.WS_HEARTBEAT_MS,
+      intervalMs: cfg.heartbeat?.intervalMs ?? V_WS_HEARTBEAT_MS,
       pingPayload: cfg.heartbeat?.pingPayload ?? { type: 'ping' },
       isPong: cfg.heartbeat?.isPong,
       maxMiss: cfg.heartbeat?.maxMiss ?? 1,
     }
 
     this.cfg = {
-      withTokenQuery: cfg.withTokenQuery ?? WS_ENV.WS_WITH_TOKEN_QUERY,
+      withTokenQuery: cfg.withTokenQuery ?? V_WS_WITH_TOKEN_QUERY,
       tokenProvider:
         cfg.tokenProvider ??
         (() => {
@@ -210,12 +259,12 @@ export class WsClient {
       },
       heartbeat: {
         enabled: heartbeat.enabled ?? true,
-        intervalMs: heartbeat.intervalMs ?? WS_ENV.WS_HEARTBEAT_MS,
+        intervalMs: heartbeat.intervalMs ?? V_WS_HEARTBEAT_MS,
         pingPayload: heartbeat.pingPayload,
         isPong: heartbeat.isPong,
         maxMiss: heartbeat.maxMiss ?? 1,
       },
-      requestTimeoutMs: cfg.requestTimeoutMs ?? WS_ENV.WS_REQUEST_TIMEOUT_MS,
+      requestTimeoutMs: cfg.requestTimeoutMs ?? V_WS_REQUEST_TIMEOUT_MS,
       idKey: cfg.idKey ?? 'id',
       subscribe: {
         buildSubscribeFrame: cfg.subscribe?.buildSubscribeFrame,
@@ -225,18 +274,19 @@ export class WsClient {
       parser: cfg.parser ?? DefaultParser,
       log: cfg.log ?? (() => {}),
       params: cfg.params ?? {},
-      path: cfg.path ?? WS_ENV.WS_PATH,
-      baseURL: cfg.baseURL ?? WS_ENV.WS_BASE_URL,
+      // ⬇️ [변경] path/baseURL 기본값도 VITE 값 사용
+      path: cfg.path ?? V_WS_PATH,
+      baseURL: cfg.baseURL ?? V_WS_BASE_URL,
       url: cfg.url,
       protocols: cfg.protocols,
     }
 
-    this.hbBaseInterval = this.cfg.heartbeat.intervalMs ?? WS_ENV.WS_HEARTBEAT_MS
+    // ⬇️ [변경] 하트비트 기본 간격도 VITE 값
+    this.hbBaseInterval = this.cfg.heartbeat.intervalMs ?? V_WS_HEARTBEAT_MS
 
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleOnline)
       window.addEventListener('offline', this.handleOffline)
-      // 가시성 폴백: 비활성 시 하트비트 임계 상향
       window.addEventListener('visibilitychange', () => {
         const d = (globalThis as unknown as { document?: Document }).document
         if (!d) return
@@ -300,7 +350,7 @@ export class WsClient {
 
   /* ---------- 전송 / RPC / 구독 ---------- */
   private enqueue(payload: string | ArrayBufferLike | Blob) {
-    if (this.queue.length >= this.maxQueue) this.queue.shift() // 가장 오래된 것 드롭
+    if (this.queue.length >= this.maxQueue) this.queue.shift()
     this.queue.push(payload)
   }
 
@@ -423,7 +473,7 @@ export class WsClient {
           this.safeClose(4000, 'heartbeat-missed')
         }
       } else {
-        this.heartbeatMiss = 0 // 최근 트래픽이 있으면 miss 리셋
+        this.heartbeatMiss = 0
       }
     }
     this.hbTimer = setInterval(tick, this.hbBaseInterval * this.hbIdleFactor)
@@ -505,7 +555,6 @@ export class WsClient {
         this.emit('close', ev)
         if (!this.shouldReconnect) return
 
-        // 인증/정책 실패 close code → 토큰 재발급 기회 제공
         const authCodes = new Set([4401, 4403, 1008])
         if (authCodes.has(ev.code)) {
           try {
@@ -522,7 +571,6 @@ export class WsClient {
         const raw = coerceMessageData(ev.data as unknown)
         const decoded = this.cfg.parser.decode(raw)
 
-        // RPC id 매칭
         if (decoded && typeof decoded === 'object') {
           const obj = decoded as Record<string, unknown>
           const idVal = obj[this.cfg.idKey]
@@ -535,7 +583,6 @@ export class WsClient {
               return
             }
           }
-          // 토픽 라우팅 (topic/channel)
           const topicVal = obj['topic'] ?? obj['channel']
           if (typeof topicVal === 'string') {
             const set = this.subs.get(topicVal)
