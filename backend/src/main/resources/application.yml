@@ -29,3 +29,16 @@ logging:
   level:
     root: WARN
     com.hmm.backend: INFO
+springwolf:
+  docket:
+    base-package: com.hmm.cbui.global.websocket.handler
+    info:
+      title: WebSocket Chat API
+      version: 1.0.0
+      description: 채팅 메시지를 위한 WebSocket API 문서
+    servers:
+      default:
+        protocol: ws
+        url: ws://localhost:18080/ws
+
+

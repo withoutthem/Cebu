@@ -1,13 +1,13 @@
-package com.hmm.backend.config;
+package com.hmm.cbui.config;
 
-import com.hmm.backend.util.AES128Util;
+import com.hmm.cbui.util.AES128Util;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AESConfig {
-    @Value("${aes.key}")
+    @Value("${spring.aes.key}")
     private String aesKey;
 
     @Bean
