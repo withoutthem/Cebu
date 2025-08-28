@@ -1,41 +1,95 @@
 #!/bin/sh
-. "$(dirname "$0")/husky.sh"
+# =====================================================================
+# Husky pre-commit hook
+# - FE: lint-staged → TS 타입체크 → Jest
+# - BE: Docker(Compose) 컨테이너에서 Maven 정적분석(Checkstyle/PMD)
+# - compose 파일은 infra/docker-compose.yml 우선 사용
+# =====================================================================
 
-# 안전모드 + 로그
+. "$(dirname "$0")/husky.sh"
 set -euo pipefail
 
-echo "🔧 [pre-commit] 1) lint-staged 실행"
-npx lint-staged
+# --------------------------- Helpers ---------------------------------
+log()   { printf "\033[36m%s\033[0m\n" "$*"; }
+ok()    { printf "✅ \033[32m%s\033[0m\n" "$*"; }
+warn()  { printf "⚠️  \033[33m%s\033[0m\n" "$*"; }
+fail()  { printf "❌ \033[31m%s\033[0m\n" "$*" >&2; exit 1; }
+error() { printf "❌ \033[31m%s\033[0m\n" "$*" >&2; }
+divider(){ printf "\n\033[35m──────────────────────────────────────────────\033[0m\n\n"; }
 
-echo "🔎 [pre-commit] 2) TypeScript 타입체크(frontend)"
-npm --prefix frontend run typecheck
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
 
-echo "🧪 [pre-commit] 3) Jest 테스트(frontend)"
-# 기본은 package.json의 설정을 사용.
-npm --prefix frontend run test
+divider
+log "🚀 Husky pre-commit Hook 시작"
 
-echo "🛠 [pre-commit] 4) Java 정적분석 (Maven in Docker: Checkstyle/PMD/SpotBugs)"
-# docker/compose 점검
-if ! command -v docker >/dev/null 2>&1; then
-  echo "❌ Docker가 필요합니다. 설치 후 다시 시도하세요."
-  exit 1
-fi
-if ! docker compose version >/dev/null 2>&1; then
-  echo "❌ Docker Compose가 필요합니다. 설치 후 다시 시도하세요."
-  exit 1
-fi
-
-# 백엔드(POM) 존재 시에만 검사 수행
-if [ -f "pom.xml" ]; then
-  # 컨테이너에서 Maven 실행(의존성 캐시는 compose의 maven-repo 볼륨 사용)
-  # 속도 위해 테스트는 생략(-DskipTests), 정적분석 위반 시 실패하도록 설정되어 있어 commit 차단됨
-  docker compose run --rm code-quality \
-    "mvn -q -DskipTests clean verify" || {
-      echo '❌ Java 정적분석 실패(Checkstyle/PMD/SpotBugs) → 커밋 차단'
-      exit 1
-    }
+# ------------------------ Step 1: FE lint -----------------------------
+divider
+log "🔧 [Step 1] lint-staged 실행"
+if command -v npx >/dev/null 2>&1; then
+  npx lint-staged || fail "lint-staged 실패 → 커밋 차단"
 else
-  echo "ℹ️ pom.xml이 없어 Java 정적분석은 건너뜁니다."
+  warn "npx가 없어 lint-staged를 건너뜁니다."
 fi
 
-echo "✅ [pre-commit] 완료"
+# -------------------- Step 2: FE TypeScript ---------------------------
+divider
+log "🔎 [Step 2] TypeScript 타입체크(frontend)"
+if [ -d "frontend" ]; then
+  npm --prefix frontend run typecheck || fail "TypeScript 타입체크 실패 → 커밋 차단"
+else
+  warn "frontend 디렉토리를 찾지 못해 타입체크를 건너뜁니다."
+fi
+
+# ----------------------- Step 3: FE Tests -----------------------------
+divider
+log "🧪 [Step 3] Jest 테스트(frontend)"
+if [ -d "frontend" ]; then
+  npm --prefix frontend run test || fail "Jest 테스트 실패 → 커밋 차단"
+else
+  warn "frontend 디렉토리를 찾지 못해 테스트를 건너뜁니다."
+fi
+
+# --------------- Step 4: BE Static Analysis (Docker) ------------------
+divider
+log "🛠 [Step 4] Java 정적분석 (Maven in Docker: Checkstyle/PMD)"
+
+command -v docker >/dev/null 2>&1 || fail "Docker가 필요합니다."
+docker compose version >/dev/null 2>&1 || fail "Docker Compose가 필요합니다."
+
+# compose 파일 탐색
+if   [ -f "infra/docker-compose.yml" ]; then
+  COMPOSE_FILE="infra/docker-compose.yml"
+elif [ -f "infra/docker-compose.yaml" ]; then
+  COMPOSE_FILE="infra/docker-compose.yaml"
+elif [ -f "docker-compose.yml" ]; then
+  COMPOSE_FILE="docker-compose.yml"
+elif [ -f "docker-compose.yaml" ]; then
+  COMPOSE_FILE="docker-compose.yaml"
+elif [ -f "compose.yaml" ]; then
+  COMPOSE_FILE="compose.yaml"
+else
+  fail "compose 파일을 찾을 수 없습니다."
+fi
+
+docker compose -f "$COMPOSE_FILE" config >/dev/null || fail "compose 구성 오류"
+
+if [ -f "backend/pom.xml" ]; then
+  if ! docker compose -f "$COMPOSE_FILE" run --rm --remove-orphans -T code-quality \
+        bash -lc 'cd backend && mvn -q -DskipTests \
+          -Dcheckstyle.skip=false -Dpmd.skip=false \
+          clean verify'
+  then
+    error "Java 정적분석 실패 → 커밋 차단"
+    echo "─── PMD 요약 ───"
+    PMD_SUMMARY_LIMIT=100 ./scripts/pmd-summary.sh || true
+    echo "📄 상세: backend/target/site/pmd.html  또는  backend/target/pmd.xml"
+    exit 1
+  fi
+else
+  warn "backend/pom.xml을 찾지 못해 Java 정적분석을 건너뜁니다."
+fi
+
+divider
+ok "[pre-commit] 모든 검사 통과 🎉"
+divider

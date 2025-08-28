@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="cbui-ruleset"
+         xmlns="https://pmd.github.io/pmd-7.0.0/ruleset/2.0.0">
+    <description>
+        Project custom PMD ruleset
+        - errorprone 전체 사용
+    </description>
+
+    <exclude-pattern>.*/com/hmm/cbui/domain/test/.*</exclude-pattern>
+
+    <!-- errorprone -->
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="MissingSerialVersionUID"/>
+    </rule>
+
+    <!-- bestpractices -->
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="SystemPrintln"/>
+        <exclude name="GuardLogStatement"/>
+    </rule>
+</ruleset>

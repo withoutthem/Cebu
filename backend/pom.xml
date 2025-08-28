@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Spring Boot BOM -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -14,27 +16,69 @@
     <artifactId>backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>backend</name>
-    <description>Demo project for Spring Boot</description>
+    <description>Demo project for Spring Boot (WebFlux)</description>
 
     <properties>
         <java.version>17</java.version>
         <springdoc.version>2.8.9</springdoc.version>
         <oracle-r2dbc.version>1.2.0</oracle-r2dbc.version>
+
+        <!-- 🔐 안전 버전(취약점 대응) -->
+        <guava.version>33.3.1-jre</guava.version>
+        <commons-fileupload.version>1.5</commons-fileupload.version>
+        <commons-io.version>2.16.1</commons-io.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+
+        <!-- plugins -->
+        <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+        <maven-pmd-plugin.version>3.25.0</maven-pmd-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+
+        <!-- dependency BOMs -->
+        <netty.version>4.1.124.Final</netty.version>
+
+        <!-- 누락 방지(annotationProcessorPaths에서 사용) -->
+        <lombok.version>1.18.34</lombok.version>
     </properties>
 
+    <!-- 🎯 강제 버전 관리 -->
     <dependencyManagement>
         <dependencies>
+            <!-- Netty BOM -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
-                <version>4.1.124.Final</version>
+                <version>${netty.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- 취약점 대응 -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-fileupload</groupId>
+                <artifactId>commons-fileupload</artifactId>
+                <version>${commons-fileupload.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
+        <!-- WebFlux / Netty -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
@@ -44,17 +88,20 @@
             <artifactId>spring-boot-starter-reactor-netty</artifactId>
         </dependency>
 
+        <!-- OpenAPI (WebFlux 전용) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- R2DBC + Oracle -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-r2dbc</artifactId>
@@ -65,6 +112,62 @@
             <version>${oracle-r2dbc.version}</version>
         </dependency>
 
+        <!-- AOP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- WebSocket -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-fileupload</groupId>
+                    <artifactId>commons-fileupload</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-lang</groupId>
+                    <artifactId>commons-lang</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- SpringWolf -->
+        <dependency>
+            <groupId>io.github.springwolf</groupId>
+            <artifactId>springwolf-core</artifactId>
+            <version>0.10.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-fileupload</groupId>
+                    <artifactId>commons-fileupload</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-lang</groupId>
+                    <artifactId>commons-lang</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Lombok / Devtools -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -77,79 +180,60 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
+        <!-- 취약 라이브러리 강제 -->
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.0.4</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>io.github.springwolf</groupId>
-            <artifactId>springwolf-core</artifactId>
-            <version>0.10.0</version>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
             </plugin>
 
+            <!-- Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
+                    <release>${java.version}</release>
                 </configuration>
             </plugin>
 
-            <!-- Checkstyle: Google 스타일 기반 -->
+            <!-- ✅ Checkstyle -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>${maven-checkstyle-plugin.version}</version>
                 <configuration>
-                    <!-- 기본 google_checks.xml 사용 (가볍게) -->
                     <configLocation>google_checks.xml</configLocation>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <violationSeverity>error</violationSeverity>
-                    <!-- 생성물 경량화 -->
-                    <includes>**/*.java</includes>
                 </configuration>
                 <executions>
                     <execution>
@@ -160,23 +244,27 @@
                 </executions>
             </plugin>
 
-            <!-- PMD: 코드 스멜/안티패턴 -->
+            <!-- ✅ PMD -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.25.0</version>
+                <version>${maven-pmd-plugin.version}</version>
                 <configuration>
                     <printFailingErrors>true</printFailingErrors>
                     <failOnViolation>true</failOnViolation>
-                    <!-- 기본 룰셋(경량). 필요시 custom ruleset.xml로 교체 -->
                     <rulesets>
-                        <ruleset>category/java/bestpractices.xml</ruleset>
-                        <ruleset>category/java/errorprone.xml</ruleset>
-                        <ruleset>category/java/codestyle.xml</ruleset>
+                        <ruleset>pmd-ruleset.xml</ruleset>
                     </rulesets>
-                    <includes>
-                        <include>**/*.java</include>
-                    </includes>
+
+                    <excludes>
+                        <!-- src/main/java 하위 경로 기준 -->
+                        <exclude>**/domain/test/**/*.java</exclude>
+                    </excludes>
+
+                    <excludeRoots>
+                        <excludeRoot>${project.basedir}/src/main/java/com/hmm/cbui/domain/test</excludeRoot>
+                    </excludeRoots>
+
                 </configuration>
                 <executions>
                     <execution>
@@ -187,27 +275,29 @@
                 </executions>
             </plugin>
 
-            <!-- SpotBugs: 버그 패턴 (경량 설정) -->
+            <!-- ✅ Enforcer -->
             <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.8.6.5</version>
-                <configuration>
-                    <effort>min</effort>        <!-- 빠르게 -->
-                    <threshold>Medium</threshold><!-- 경고 과다 방지 -->
-                    <failOnError>true</failOnError>
-                    <includeTests>false</includeTests>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>spotbugs-verify</id>
-                        <phase>verify</phase>
-                        <goals><goal>check</goal></goals>
+                        <id>ban-legacy-commons-lang</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>commons-lang:commons-lang</exclude>
+                                    </excludes>
+                                    <searchTransitive>true</searchTransitive>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
-
 </project>

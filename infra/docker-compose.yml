@@ -1,5 +1,11 @@
 services:
-  # ORACLE DATABASE
+  # =========================================================
+  # ORACLE DATABASE (23c Free) - 로컬 개발용
+  # ---------------------------------------------------------
+  # - 데이터 파일: oracle23-data 네임드 볼륨에 보존
+  # - 초기 스크립트: infra/db/init/* 자동 실행
+  # - 포트 매핑: 호스트 1527→컨테이너 1521, 5500→5500
+  # =========================================================
   oracle:
     image: gvenzl/oracle-free:latest
     container_name: oracle-23c-free
@@ -19,13 +25,30 @@ services:
       timeout: 5s
       retries: 40
 
-  # 정적 분석툴
+  # =========================================================
+  # CODE QUALITY RUNNER (Maven 3.9 + Temurin JDK 17)
+  # ---------------------------------------------------------
+  # - Husky pre-commit에서 아래처럼 호출:
+  #   docker compose -f infra/docker-compose.yml run --rm -T code-quality \
+  #     bash -lc "cd backend && mvn -q -DskipTests clean verify"
+  # - working_dir: /workspace (컨테이너 기본 작업 경로)
+  # - ../ 를 마운트하여 리포 루트(backend, frontend 포함)를 /workspace로 노출
+  # - maven-repo 네임드 볼륨으로 Maven 캐시 공유(속도 개선)
+  # =========================================================
   code-quality:
     image: maven:3.9.8-eclipse-temurin-17
     working_dir: /workspace
-    entrypoint: [ "bash","-lc" ]
     volumes:
-      - ./:/workspace
+      # ⚠️ compose가 infra/ 폴더에 있으므로 리포 루트는 ../
+      - ../:/workspace
       - maven-repo:/root/.m2
+
+# ===========================================================
+# NAMED VOLUMES
+# -----------------------------------------------------------
+# - oracle23-data : 오라클 데이터 파일 보존
+# - maven-repo    : Maven 로컬 캐시 공유(다운로드 재사용)
+# ===========================================================
 volumes:
   oracle23-data:
+  maven-repo:
