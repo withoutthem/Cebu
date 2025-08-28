@@ -29,6 +29,7 @@ public class SpaRoutingConfiguration {
                 GET("/**")
                         .and(path("/api/**").negate())
                         .and(path("/v3/api-docs/**").negate())
+                        .and(path("/springwolf/**").negate())
                         .and(path("/swagger-ui/**").negate())
                         .and(path("/swagger-ui.html").negate());
 

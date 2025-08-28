@@ -19,6 +19,9 @@ spring:
 
 # --- Logging (Local Override) ---
 logging:
+  file:
+    path: C:/hmm_workspace/Log/app/cbuip/
+    name: hmm-cbuip
   level:
     # 로컬에서는 상세한 로그 확인을 위해 DEBUG 레벨 사용
     root: INFO
