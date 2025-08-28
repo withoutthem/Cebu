@@ -20,31 +20,30 @@
 
     <properties>
         <java.version>17</java.version>
-        <springdoc.version>2.8.9</springdoc.version>
-        <oracle-r2dbc.version>1.2.0</oracle-r2dbc.version>
 
-        <!-- 🔐 안전 버전(취약점 대응) -->
-        <guava.version>33.3.1-jre</guava.version>
-        <commons-fileupload.version>1.5</commons-fileupload.version>
-        <commons-io.version>2.16.1</commons-io.version>
+        <!-- 라이브러리 최신/안전 버전 (2025-08-28 기준) -->
+        <springdoc.version>2.8.10</springdoc.version>         <!-- 2025-08 릴리스 -->
+        <oracle-r2dbc.version>1.3.0</oracle-r2dbc.version>    <!-- R2DBC SPI 1.0 구현 -->
+        <guava.version>33.4.8-jre</guava.version>
+        <commons-fileupload.version>1.6.0</commons-fileupload.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
 
-        <!-- plugins -->
-        <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
-        <maven-pmd-plugin.version>3.25.0</maven-pmd-plugin.version>
-        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+        <!-- 플러그인 최신 -->
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+        <maven-pmd-plugin.version>3.27.0</maven-pmd-plugin.version>
+        <maven-enforcer-plugin.version>3.6.1</maven-enforcer-plugin.version>
 
-        <!-- dependency BOMs -->
+        <!-- 네티 BOM (Boot가 관리하는 Reactor Netty와 충돌 없도록 4.1.x 최신) -->
         <netty.version>4.1.124.Final</netty.version>
 
-        <!-- 누락 방지(annotationProcessorPaths에서 사용) -->
+        <!-- Lombok AP 경고 방지 -->
         <lombok.version>1.18.34</lombok.version>
     </properties>
 
-    <!-- 🎯 강제 버전 관리 -->
+    <!-- 강제 버전 관리(트랜지티브까지 상향 고정) -->
     <dependencyManagement>
         <dependencies>
-            <!-- Netty BOM -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
@@ -53,7 +52,6 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- 취약점 대응 -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -88,7 +86,7 @@
             <artifactId>spring-boot-starter-reactor-netty</artifactId>
         </dependency>
 
-        <!-- OpenAPI (WebFlux 전용) -->
+        <!-- OpenAPI (WebFlux 전용 UI) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
@@ -112,58 +110,34 @@
             <version>${oracle-r2dbc.version}</version>
         </dependency>
 
-        <!-- AOP -->
+        <!-- AOP (필요 시) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
-        <!-- WebSocket -->
+        <!-- WebSocket (순수 WebFlux만 쓰면 제거 가능) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
             <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-fileupload</groupId>
-                    <artifactId>commons-fileupload</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
+                <exclusion><groupId>com.google.guava</groupId><artifactId>guava</artifactId></exclusion>
+                <exclusion><groupId>commons-fileupload</groupId><artifactId>commons-fileupload</artifactId></exclusion>
+                <exclusion><groupId>commons-io</groupId><artifactId>commons-io</artifactId></exclusion>
+                <exclusion><groupId>commons-lang</groupId><artifactId>commons-lang</artifactId></exclusion>
             </exclusions>
         </dependency>
 
-        <!-- SpringWolf -->
+        <!-- SpringWolf (필요 시) -->
         <dependency>
             <groupId>io.github.springwolf</groupId>
             <artifactId>springwolf-core</artifactId>
             <version>0.10.0</version>
             <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-fileupload</groupId>
-                    <artifactId>commons-fileupload</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
+                <exclusion><groupId>com.google.guava</groupId><artifactId>guava</artifactId></exclusion>
+                <exclusion><groupId>commons-fileupload</groupId><artifactId>commons-fileupload</artifactId></exclusion>
+                <exclusion><groupId>commons-io</groupId><artifactId>commons-io</artifactId></exclusion>
+                <exclusion><groupId>commons-lang</groupId><artifactId>commons-lang</artifactId></exclusion>
             </exclusions>
         </dependency>
 
@@ -187,23 +161,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- 취약 라이브러리 강제 -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
+        <!-- 취약 라이브러리 상향 고정(트랜지티브 소음 방지) -->
+        <dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId></dependency>
+        <dependency><groupId>commons-fileupload</groupId><artifactId>commons-fileupload</artifactId></dependency>
+        <dependency><groupId>commons-io</groupId><artifactId>commons-io</artifactId></dependency>
+        <dependency><groupId>org.apache.commons</groupId><artifactId>commons-lang3</artifactId></dependency>
     </dependencies>
 
     <build>
@@ -214,26 +176,33 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Compiler -->
+            <!-- Compiler (Lombok AP 등록) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>${java.version}</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
-            <!-- ✅ Checkstyle -->
+            <!-- ✅ Checkstyle (Google 규칙) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${maven-checkstyle-plugin.version}</version>
                 <configuration>
                     <configLocation>google_checks.xml</configLocation>
-                    <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <violationSeverity>error</violationSeverity>
+                    <encoding>UTF-8</encoding>
                 </configuration>
                 <executions>
                     <execution>
@@ -244,7 +213,7 @@
                 </executions>
             </plugin>
 
-            <!-- ✅ PMD -->
+            <!-- ✅ PMD (커스터마이즈 룰 + /domain/test 제외) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
@@ -255,16 +224,9 @@
                     <rulesets>
                         <ruleset>pmd-ruleset.xml</ruleset>
                     </rulesets>
-
                     <excludes>
-                        <!-- src/main/java 하위 경로 기준 -->
                         <exclude>**/domain/test/**/*.java</exclude>
                     </excludes>
-
-                    <excludeRoots>
-                        <excludeRoot>${project.basedir}/src/main/java/com/hmm/cbui/domain/test</excludeRoot>
-                    </excludeRoots>
-
                 </configuration>
                 <executions>
                     <execution>
@@ -275,7 +237,7 @@
                 </executions>
             </plugin>
 
-            <!-- ✅ Enforcer -->
+            <!-- ✅ Enforcer: 레거시 commons-lang(2.x) 금지 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
