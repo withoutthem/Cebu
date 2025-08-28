@@ -39,6 +39,9 @@
 
         <!-- Lombok AP 경고 방지 -->
         <lombok.version>1.18.34</lombok.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <!-- 강제 버전 관리(트랜지티브까지 상향 고정) -->
@@ -202,7 +205,6 @@
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <violationSeverity>error</violationSeverity>
-                    <encoding>UTF-8</encoding>
                 </configuration>
                 <executions>
                     <execution>
