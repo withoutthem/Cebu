@@ -1,5 +1,5 @@
-// env.ts — WebSocket ENV 로딩/정규화
-// - 우선순위(높→낮): 런타임(__APP_CONF__) > Vite(.env: import.meta.env) > 빌드타임 define(__WS_*__) > 유도값/기본값
+// env.ts — WebSocket ENV 로딩/정규화 (Vite 환경에 최적화)
+// - 우선순위(높→낮): 런타임(__APP_CONF__) > Vite(.env: import.meta.env) > 유도값/기본값
 // - 타입/ESLint 안정: 모든 외부 입력은 string|number|boolean|undefined로 받아 안전 파싱(num/bool)
 
 export type RuntimeAppConfWS = {
@@ -13,15 +13,9 @@ export type RuntimeAppConfWS = {
   ACCESS_TOKEN?: string
 }
 
-// (옵션) 빌드타임 define — 없으면 undefined로 처리됨
-declare const __WS_BASE_URL__: string | undefined
-declare const __WS_PATH__: string | undefined
-declare const __WS_RETRY_MIN_MS__: string | undefined
-declare const __WS_RETRY_MAX_MS__: string | undefined
-declare const __WS_HEARTBEAT_MS__: string | undefined
-declare const __WS_REQUEST_TIMEOUT_MS__: string | undefined
-declare const __WS_WITH_TOKEN_QUERY__: string | undefined
-declare const __API_BASE_URL__: string | undefined
+// ⬇️ [수정] Vite에서는 사용하지 않는 빌드타임 define 선언을 모두 제거합니다.
+// declare const __WS_BASE_URL__: string | undefined
+// ... (이하 모두 제거)
 
 type WsEnv = {
   WS_BASE_URL: string
@@ -62,10 +56,8 @@ function readRuntimeConf(): Partial<RuntimeAppConfWS> {
 // Vite(.env) 안전 참조 (SSR/테스트에서 import.meta.env가 없을 수 있음)
 function readViteEnv() {
   try {
-    if (typeof import.meta !== 'undefined') {
-      const meta = import.meta as ImportMeta
-
-      return meta.env as {
+    if (import.meta?.env) {
+      return import.meta.env as {
         VITE_WS_BASE_URL?: string
         VITE_WS_PATH?: string
         VITE_WS_RETRY_MIN_MS?: string
@@ -93,7 +85,7 @@ function deriveWsBaseFromApi(apiBase?: string): string | undefined {
   try {
     const origin = (globalThis as unknown as { location?: Location }).location?.origin
     const u = new URL(apiBase, origin)
-    u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
+    u.protocol = u.protocol.startsWith('https') ? 'wss:' : 'ws:'
     u.pathname = '/ws'
     u.search = ''
     u.hash = ''
@@ -110,33 +102,22 @@ export const WS_ENV: WsEnv = (() => {
   const ve = readViteEnv()
 
   // 1) WS_BASE_URL
-  //    런타임 → Vite(.env: VITE_WS_BASE_URL) → 빌드 define → VITE_API_BASE_URL로 유도 → __API_BASE_URL__로 유도 → 기본 '/ws'
+  // ⬇️ [수정] __WS_BASE_URL__ 및 관련 define을 참조하는 로직을 제거합니다.
+  //    런타임 → Vite(.env: VITE_WS_BASE_URL) → VITE_API_BASE_URL로 유도 → 기본 '/ws'
   const wsBase =
-    rt.WS_BASE_URL ??
-    ve?.VITE_WS_BASE_URL ??
-    __WS_BASE_URL__ ??
-    deriveWsBaseFromApi(ve?.VITE_API_BASE_URL) ??
-    deriveWsBaseFromApi(__API_BASE_URL__) ??
-    '/ws'
+    rt.WS_BASE_URL ?? ve?.VITE_WS_BASE_URL ?? deriveWsBaseFromApi(ve?.VITE_API_BASE_URL) ?? '/ws'
 
   // 2) WS_PATH
-  const wsPath = rt.WS_PATH ?? ve?.VITE_WS_PATH ?? __WS_PATH__ ?? ''
+  // ⬇️ [수정] __WS_PATH__ 참조 제거
+  const wsPath = rt.WS_PATH ?? ve?.VITE_WS_PATH ?? ''
 
-  // 3) 숫자/불리언 값 파싱 (런타임 → Vite → 빌드 define → 기본값)
-  const retryMin = num(rt.WS_RETRY_MIN_MS ?? ve?.VITE_WS_RETRY_MIN_MS ?? __WS_RETRY_MIN_MS__, 300)
-  const retryMax = num(
-    rt.WS_RETRY_MAX_MS ?? ve?.VITE_WS_RETRY_MAX_MS ?? __WS_RETRY_MAX_MS__,
-    10_000
-  )
-  const hbMs = num(rt.WS_HEARTBEAT_MS ?? ve?.VITE_WS_HEARTBEAT_MS ?? __WS_HEARTBEAT_MS__, 25_000)
-  const reqTo = num(
-    rt.WS_REQUEST_TIMEOUT_MS ?? ve?.VITE_WS_REQUEST_TIMEOUT_MS ?? __WS_REQUEST_TIMEOUT_MS__,
-    15_000
-  )
-  const withToken = bool(
-    rt.WS_WITH_TOKEN_QUERY ?? ve?.VITE_WS_WITH_TOKEN_QUERY ?? __WS_WITH_TOKEN_QUERY__,
-    true
-  )
+  // 3) 숫자/불리언 값 파싱 (런타임 → Vite → 기본값)
+  // ⬇️ [수정] 모든 __...__ 참조 제거
+  const retryMin = num(rt.WS_RETRY_MIN_MS ?? ve?.VITE_WS_RETRY_MIN_MS, 300)
+  const retryMax = num(rt.WS_RETRY_MAX_MS ?? ve?.VITE_WS_RETRY_MAX_MS, 10_000)
+  const hbMs = num(rt.WS_HEARTBEAT_MS ?? ve?.VITE_WS_HEARTBEAT_MS, 25_000)
+  const reqTo = num(rt.WS_REQUEST_TIMEOUT_MS ?? ve?.VITE_WS_REQUEST_TIMEOUT_MS, 15_000)
+  const withToken = bool(rt.WS_WITH_TOKEN_QUERY ?? ve?.VITE_WS_WITH_TOKEN_QUERY, true)
 
   return {
     WS_BASE_URL: wsBase,

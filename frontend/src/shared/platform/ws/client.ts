@@ -1,56 +1,9 @@
-// client.ts — 안정/성능 최우선 WebSocket 래퍼 (VITE env 전용)
+// client.ts — 안정/성능 최우선 WebSocket 래퍼 (env.ts 설정 사용)
 // - 지수백오프(+지터), 오프라인 감지, 하트비트(유휴 시만 ping), 대기큐(상한/드롭), RPC(id 매칭/Abort), 자동 재구독
 // - 인증/정책 close code 대응(토큰 재발급 트리거), 선택적 subprotocols 지원
 // - ESLint: no-unsafe-return/assignment 대응(unknown 내로잉), exactOptionalPropertyTypes 대응
 
-// ⬇️ [변경] env.ts 제거 대신 VITE 값 직접 사용
-function num(v: unknown, fallback: number): number {
-  if (typeof v === 'number' && Number.isFinite(v)) return v
-  if (typeof v === 'string') {
-    const n = Number(v)
-    if (!Number.isNaN(n)) return n
-  }
-  return fallback
-}
-function bool(v: unknown, fallback: boolean): boolean {
-  if (typeof v === 'boolean') return v
-  if (typeof v === 'string') {
-    const s = v.trim().toLowerCase()
-    if (s === 'true' || s === '1') return true
-    if (s === 'false' || s === '0') return false
-  }
-  return fallback
-}
-function viteEnv() {
-  if (typeof import.meta === 'undefined') return {} as Record<string, string | undefined>
-  const env = (import.meta as ImportMeta).env as {
-    VITE_WS_BASE_URL?: string
-    VITE_WS_PATH?: string
-    VITE_WS_RETRY_MIN_MS?: string
-    VITE_WS_RETRY_MAX_MS?: string
-    VITE_WS_HEARTBEAT_MS?: string
-    VITE_WS_REQUEST_TIMEOUT_MS?: string
-    VITE_WS_WITH_TOKEN_QUERY?: string
-    VITE_ACCESS_TOKEN?: string
-  }
-  return env ?? {}
-}
-const V = viteEnv()
-// 기본값은 현행 env.ts와 동일/유사하게 유지
-const V_WS_BASE_URL = V.VITE_WS_BASE_URL ?? '/ws'
-const V_WS_PATH = V.VITE_WS_PATH ?? ''
-const V_WS_RETRY_MIN_MS = num(V.VITE_WS_RETRY_MIN_MS, 300)
-const V_WS_RETRY_MAX_MS = num(V.VITE_WS_RETRY_MAX_MS, 10_000)
-const V_WS_HEARTBEAT_MS = num(V.VITE_WS_HEARTBEAT_MS, 25_000)
-const V_WS_REQUEST_TIMEOUT_MS = num(V.VITE_WS_REQUEST_TIMEOUT_MS, 15_000)
-const V_WS_WITH_TOKEN_QUERY = bool(V.VITE_WS_WITH_TOKEN_QUERY, true)
-const V_RUNTIME_ACCESS_TOKEN = V.VITE_ACCESS_TOKEN
-
-function getRuntimeAccessToken(): string | undefined {
-  const g = globalThis as unknown as { __APP_CONF__?: { ACCESS_TOKEN?: string } }
-  return g.__APP_CONF__?.ACCESS_TOKEN ?? V_RUNTIME_ACCESS_TOKEN
-}
-
+import { getRuntimeAccessToken, WS_ENV } from './env'
 import type {
   BackoffPolicy,
   HeartbeatPolicy,
@@ -83,20 +36,29 @@ function buildWsUrl(input: {
   params?: Record<string, unknown>
 }): string {
   const origin = (globalThis as unknown as { location?: Location }).location?.origin
-  // ⬇️ [변경] WS_ENV.WS_BASE_URL → V_WS_BASE_URL
-  const u = new URL(input.url ?? input.baseURL ?? V_WS_BASE_URL, origin)
+  const u = new URL(input.url ?? input.baseURL ?? WS_ENV.WS_BASE_URL, origin)
+
   if (input.path) {
     const left = u.pathname.endsWith('/') ? u.pathname.slice(0, -1) : u.pathname
     const right = input.path.startsWith('/') ? input.path : `/${input.path}`
     u.pathname = `${left}${right}`
   }
-  if (u.protocol === 'http:') u.protocol = 'ws:'
-  if (u.protocol === 'https:') u.protocol = 'wss:'
+
+  // ⬇️ [수정] 오타 수정 ('https:) → ('https:') 및 가독성을 위한 중괄호 추가
+  if (u.protocol === 'http:') {
+    u.protocol = 'ws:'
+  } else if (u.protocol === 'https:') {
+    u.protocol = 'wss:'
+  }
+
   if (input.params) {
     const usp = new URLSearchParams(u.search)
     for (const [k, v] of Object.entries(input.params)) {
-      if (Array.isArray(v)) v.forEach((x) => usp.append(k, toParam(x)))
-      else if (v != null) usp.set(k, toParam(v))
+      if (Array.isArray(v)) {
+        v.forEach((x) => usp.append(k, toParam(x)))
+      } else if (v != null) {
+        usp.set(k, toParam(v))
+      }
     }
     u.search = usp.toString()
   }
@@ -187,8 +149,7 @@ export class WsClient {
 
   private hbTimer: ReturnType<typeof setInterval> | null = null
   private heartbeatMiss = 0
-  // ⬇️ [변경] WS_ENV.WS_HEARTBEAT_MS → V_WS_HEARTBEAT_MS
-  private readonly hbBaseInterval: number = V_WS_HEARTBEAT_MS
+  private readonly hbBaseInterval: number = WS_ENV.WS_HEARTBEAT_MS
   private hbIdleFactor = 1
 
   private lastActivity = Date.now()
@@ -228,28 +189,23 @@ export class WsClient {
 
   constructor(cfg: WsConfig = {}) {
     const backoff: BackoffPolicy = {
-      // ⬇️ [변경] WS_ENV.* → V_* 상수들
-      minMs: cfg.backoff?.minMs ?? V_WS_RETRY_MIN_MS,
-      maxMs: cfg.backoff?.maxMs ?? V_WS_RETRY_MAX_MS,
+      minMs: cfg.backoff?.minMs ?? WS_ENV.WS_RETRY_MIN_MS,
+      maxMs: cfg.backoff?.maxMs ?? WS_ENV.WS_RETRY_MAX_MS,
       factor: cfg.backoff?.factor ?? 2,
       jitter: cfg.backoff?.jitter ?? 0.2,
       maxRetries: cfg.backoff?.maxRetries ?? Number.POSITIVE_INFINITY,
     }
     const heartbeat: HeartbeatPolicy = {
       enabled: cfg.heartbeat?.enabled ?? true,
-      intervalMs: cfg.heartbeat?.intervalMs ?? V_WS_HEARTBEAT_MS,
+      intervalMs: cfg.heartbeat?.intervalMs ?? WS_ENV.WS_HEARTBEAT_MS,
       pingPayload: cfg.heartbeat?.pingPayload ?? { type: 'ping' },
       isPong: cfg.heartbeat?.isPong,
       maxMiss: cfg.heartbeat?.maxMiss ?? 1,
     }
 
     this.cfg = {
-      withTokenQuery: cfg.withTokenQuery ?? V_WS_WITH_TOKEN_QUERY,
-      tokenProvider:
-        cfg.tokenProvider ??
-        (() => {
-          return getRuntimeAccessToken()
-        }),
+      withTokenQuery: cfg.withTokenQuery ?? WS_ENV.WS_WITH_TOKEN_QUERY,
+      tokenProvider: cfg.tokenProvider ?? getRuntimeAccessToken,
       backoff: {
         minMs: backoff.minMs,
         maxMs: backoff.maxMs,
@@ -259,12 +215,12 @@ export class WsClient {
       },
       heartbeat: {
         enabled: heartbeat.enabled ?? true,
-        intervalMs: heartbeat.intervalMs ?? V_WS_HEARTBEAT_MS,
+        intervalMs: heartbeat.intervalMs ?? WS_ENV.WS_HEARTBEAT_MS,
         pingPayload: heartbeat.pingPayload,
         isPong: heartbeat.isPong,
         maxMiss: heartbeat.maxMiss ?? 1,
       },
-      requestTimeoutMs: cfg.requestTimeoutMs ?? V_WS_REQUEST_TIMEOUT_MS,
+      requestTimeoutMs: cfg.requestTimeoutMs ?? WS_ENV.WS_REQUEST_TIMEOUT_MS,
       idKey: cfg.idKey ?? 'id',
       subscribe: {
         buildSubscribeFrame: cfg.subscribe?.buildSubscribeFrame,
@@ -274,15 +230,13 @@ export class WsClient {
       parser: cfg.parser ?? DefaultParser,
       log: cfg.log ?? (() => {}),
       params: cfg.params ?? {},
-      // ⬇️ [변경] path/baseURL 기본값도 VITE 값 사용
-      path: cfg.path ?? V_WS_PATH,
-      baseURL: cfg.baseURL ?? V_WS_BASE_URL,
+      path: cfg.path ?? WS_ENV.WS_PATH,
+      baseURL: cfg.baseURL ?? WS_ENV.WS_BASE_URL,
       url: cfg.url,
       protocols: cfg.protocols,
     }
 
-    // ⬇️ [변경] 하트비트 기본 간격도 VITE 값
-    this.hbBaseInterval = this.cfg.heartbeat.intervalMs ?? V_WS_HEARTBEAT_MS
+    this.hbBaseInterval = this.cfg.heartbeat.intervalMs ?? WS_ENV.WS_HEARTBEAT_MS
 
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleOnline)

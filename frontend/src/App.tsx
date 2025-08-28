@@ -1,7 +1,7 @@
 import { CssBaseline } from '@mui/material'
 import ApplicationProvider from './app/providers/ApplicationProvider'
-import TestPage from './pages/test/TestPage'
 import Layout from './shared/components/Layout'
+import TestPage from './pages/test/TestPage'
 
 function App() {
   return (
@@ -9,6 +9,7 @@ function App() {
       <CssBaseline />
       <Layout>
         <TestPage />
+        {/*<WebSocketTestPage />*/}
       </Layout>
     </ApplicationProvider>
   )

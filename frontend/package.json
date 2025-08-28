@@ -8,6 +8,7 @@
     "node": ">=20.19"
   },
   "scripts": {
+    "localPC": "vite --mode localPC",
     "dev": "vite --mode dev",
     "build:dev": "tsc -b && vite build --mode dev",
     "preview:dev": "vite preview --mode dev --port 5173",

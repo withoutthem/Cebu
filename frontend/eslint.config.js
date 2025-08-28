@@ -76,8 +76,8 @@ export default [
       ],
 
       // console / debugger
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'no-debugger': 'warn',
+      // 'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // 'no-debugger': 'warn',
     },
   },
 

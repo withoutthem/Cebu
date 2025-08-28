@@ -14,4 +14,28 @@ echo "🧪 [pre-commit] 3) Jest 테스트(frontend)"
 # 기본은 package.json의 설정을 사용.
 npm --prefix frontend run test
 
+echo "🛠 [pre-commit] 4) Java 정적분석 (Maven in Docker: Checkstyle/PMD/SpotBugs)"
+# docker/compose 점검
+if ! command -v docker >/dev/null 2>&1; then
+  echo "❌ Docker가 필요합니다. 설치 후 다시 시도하세요."
+  exit 1
+fi
+if ! docker compose version >/dev/null 2>&1; then
+  echo "❌ Docker Compose가 필요합니다. 설치 후 다시 시도하세요."
+  exit 1
+fi
+
+# 백엔드(POM) 존재 시에만 검사 수행
+if [ -f "pom.xml" ]; then
+  # 컨테이너에서 Maven 실행(의존성 캐시는 compose의 maven-repo 볼륨 사용)
+  # 속도 위해 테스트는 생략(-DskipTests), 정적분석 위반 시 실패하도록 설정되어 있어 commit 차단됨
+  docker compose run --rm code-quality \
+    "mvn -q -DskipTests clean verify" || {
+      echo '❌ Java 정적분석 실패(Checkstyle/PMD/SpotBugs) → 커밋 차단'
+      exit 1
+    }
+else
+  echo "ℹ️ pom.xml이 없어 Java 정적분석은 건너뜁니다."
+fi
+
 echo "✅ [pre-commit] 완료"
