@@ -91,5 +91,5 @@ else
 fi
 
 divider
-ok "[pre-commit] 모든 검사 통과 🎉"
+ok "🎉🎉🎉 [pre-commit] 모든 검사 통과 🎉🎉🎉"
 divider
