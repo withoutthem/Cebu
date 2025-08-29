@@ -52,6 +52,8 @@ out/
 *.jar
 *.war
 *.ear
+/backend/src/main/resources/static/
+/backend/src/main/resources/static/**
 
 # -----------------------
 # Test / Reports
