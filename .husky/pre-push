@@ -1,0 +1,92 @@
+#!/bin/sh
+# =====================================================================
+# Husky pre-push hook
+# - FE: 개발 빌드 (build:dev > build 우선순위)
+# - BE: 개발 빌드 (Maven package, dev 프로필 감지 시 -P dev)
+# - 모든 빌드 성공 시에만 push 진행
+# =====================================================================
+
+. "$(dirname "$0")/husky.sh"
+set -euo pipefail
+
+# --------------------------- Helpers ---------------------------------
+CYN='\033[36m'; GRN='\033[32m'; YLW='\033[33m'; RED='\033[31m'; MAG='\033[35m'; NC='\033[0m'
+log()   { printf "${CYN}%s${NC}\n" "$*"; }
+ok()    { printf "✅ ${GRN}%s${NC}\n" "$*"; }
+warn()  { printf "⚠️  ${YLW}%s${NC}\n" "$*"; }
+fail()  { printf "❌ ${RED}%s${NC}\n" "$*" >&2; exit 1; }
+divider(){ printf "\n${MAG}──────────────────────────────────────────────${NC}\n\n"; }
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
+
+divider
+log "🚀 pre-push 시작: FE/BE 개발 빌드 검증"
+
+# ------------------------ Step 0: 환경 점검 ---------------------------
+command -v node >/dev/null 2>&1 || warn "node 미설치: FE 빌드 스킵될 수 있습니다."
+command -v npm  >/dev/null 2>&1 || warn "npm  미설치: FE 빌드 스킵될 수 있습니다."
+[ -f "./mvnw" ] || warn "./mvnw 없음: BE 빌드는 시스템 mvn 사용 시도"
+
+# ------------------------ Step 1: FE Build ----------------------------
+divider
+log "🧱 [Step 1] Frontend 개발 빌드"
+
+if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+  # 의존성 설치(이미 설치돼 있으면 빠르게 통과)
+  if command -v npm >/dev/null 2>&1; then
+    log "📦 npm ci (없으면 npm i)…"
+    if [ -f "frontend/package-lock.json" ]; then
+      npm --prefix frontend ci >/dev/null 2>&1 || npm --prefix frontend install
+    else
+      npm --prefix frontend install
+    fi
+  else
+    warn "npm 미설치 → FE 빌드 스킵"
+  fi
+
+  # 사용할 스크립트 결정: build:dev > vite build --mode development > build
+  FE_CMD=""
+  if command -v node >/dev/null 2>&1 && node -e "process.exit(!require('./frontend/package.json').scripts?.['build:dev'])"; then
+    FE_CMD="npm --prefix frontend run build:dev"
+  elif command -v npx >/dev/null 2>&1; then
+    # vite 프로젝트일 경우 대비(없으면 다음 분기로)
+    npx --yes --prefix frontend --package vite -- vite -v >/dev/null 2>&1 && FE_CMD="npx --prefix frontend vite build --mode development" || true
+  fi
+  [ -z "${FE_CMD}" ] && FE_CMD="npm --prefix frontend run build"
+
+  log "🏗 실행: ${FE_CMD}"
+  sh -c "${FE_CMD}" || fail "Frontend 개발 빌드 실패 → push 중단"
+
+  ok "Frontend 개발 빌드 통과"
+else
+  warn "frontend 폴더 또는 package.json 없음 → FE 빌드 스킵"
+fi
+
+# ------------------------ Step 2: BE Build ----------------------------
+divider
+log "🏗 [Step 2] Backend 개발 빌드"
+
+if [ -d "backend" ] && [ -f "backend/pom.xml" ]; then
+  MVN="./mvnw"
+  command -v "$MVN" >/dev/null 2>&1 || MVN="mvn"
+
+  # dev 프로필 존재 시 자동 사용
+  if grep -q "<id>dev</id>" backend/pom.xml 2>/dev/null; then
+    BE_PROFILE="-P dev"
+  else
+    BE_PROFILE=""
+  fi
+
+  # 테스트는 개발 빌드에서 보통 건너뜀(원하시면 제거)
+  BE_CMD="$MVN -q -f backend/pom.xml clean package -DskipTests ${BE_PROFILE}"
+  log "🏗 실행: ${BE_CMD}"
+  sh -c "${BE_CMD}" || fail "Backend 개발 빌드 실패 → push 중단"
+
+  ok "Backend 개발 빌드 통과"
+else
+  warn "backend 폴더 또는 pom.xml 없음 → BE 빌드 스킵"
+fi
+
+divider
+ok "🎉 모든 빌드 통과 → push 진행"
