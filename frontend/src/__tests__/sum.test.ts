@@ -1,5 +1,5 @@
 // 예시: hpc/src/test/sum.test.ts (hwc도 동일 위치에 필요시 생성)
-import { describe, it, expect } from '@jest/globals'
+import { describe, expect, it } from '@jest/globals'
 
 const sum = (a: number, b: number) => a + b
 
